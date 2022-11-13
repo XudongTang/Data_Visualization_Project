@@ -20,10 +20,15 @@ function parse(data){
 		}
 	}
 	res.push(res2)
-	console.log(res)
-	console.log(test)
 }
-
+/*
+function select_country(data) {
+	const selected_country = [];
+	for (var i = 0; i < data[1].length; ++i) {
+		const found = data[0].
+	}
+}
+*/
 function draw_map(data) {
         let proj = d3.geoMercator().fitExtent([[width/2, 0],[width, height]], data);
         let path = d3.geoPath().projection(proj);
