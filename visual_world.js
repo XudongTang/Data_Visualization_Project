@@ -2,7 +2,8 @@ let width = 1500;
 let height = 1200;
 
 function main(data) {
-	parse(data[1])
+	parse(data[1]);
+	draw_map(data[0])
 }
 
 function parse(data){
@@ -20,6 +21,22 @@ function parse(data){
 	}
 	res.push(res2)
 	console.log(res)
+	console.log(test)
+}
+
+function draw_map(data) {
+        let proj = d3.geoMercator().fitExtent([[width/2, 0],[width, height]], data);
+        let path = d3.geoPath().projection(proj);
+
+        d3.select("#map")
+                .selectAll("path")
+                .data(data.features).enter()
+                .append("path")
+                .attrs({
+                        d: path,
+                        fill: "white",
+                        "stroke-width": 1
+                });
 }
 
 Promise.all([
