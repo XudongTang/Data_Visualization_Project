@@ -1,5 +1,6 @@
 let width = 1500;
 let height = 1200;
+let margins = {top: 50, bottom: 50, left: 50, right: 50}
 
 function main(data) {
 	parse(data[1]);
@@ -11,6 +12,7 @@ function parse(data){
 	var res2 = []
 	cur_country = data[0].Country
 	for(let i = 0; i < data.length; i++){
+		data[i].Year = (new Date(data[i].Year + '-01-03')).getFullYear()
 		if(data[i].Country === cur_country){
 			res2.splice(0, 0, data[i])
 		}else{
@@ -20,15 +22,21 @@ function parse(data){
 		}
 	}
 	res.push(res2)
+	console.log(res)
 }
-/*
-function select_country(data) {
-	const selected_country = [];
-	for (var i = 0; i < data[1].length; ++i) {
-		const found = data[0].
-	}
+
+function make_scales(data){
+    return{
+        x: d3.scaleTime()
+        .domain(d3.extent(data[0].map(d => d.date)))
+        .range([margins.left, width - margins.right]),
+        y: d3.scaleLinear()
+        .domain([0, 70000])
+        .range([height - margins.bottom, margins.top])
+    }
 }
-*/
+
+
 function draw_map(data) {
         let proj = d3.geoMercator().fitExtent([[width/2, 0],[width, height]], data);
         let path = d3.geoPath().projection(proj);
