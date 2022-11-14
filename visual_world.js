@@ -64,7 +64,7 @@ let scale = {
 };
 
 function draw_map(data) {
-        let proj = d3.geoMercator().fitExtent([[width/2, 0],[width, height]], data);
+        let proj = d3.geoMercator().fitExtent([[0, 0],[width, height]], data);
         let path = d3.geoPath().projection(proj);
 
         d3.select("#map")
