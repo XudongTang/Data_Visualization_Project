@@ -1,28 +1,50 @@
-let width = 1500;
-let height = 1200;
+let width = 2000;
+let height = 1500;
 let margins = {top: 50, bottom: 50, left: 50, right: 50}
 
 function main(data) {
-	parse(data[1]);
-	draw_map(data[0])
+	data[1] = parse(data[1]);
+	data[0] = merge_country(data);
+	console.log(data);
+	draw_map(data[0]);
 }
 
 function parse(data){
-	const res = []
-	var res2 = []
-	cur_country = data[0].Country
+	const res = [];
+	var res2 = [];
+	cur_country = data[0].Country;
 	for(let i = 0; i < data.length; i++){
-		data[i].Year = (new Date(data[i].Year + '-01-03')).getFullYear()
+		data[i].Year = (new Date(data[i].Year + '-01-03')).getFullYear();
 		if(data[i].Country === cur_country){
-			res2.splice(0, 0, data[i])
+			res2.splice(0, 0, data[i]);
 		}else{
-			res.push(res2)
-			res2 = [data[i]]
-			cur_country = data[i].Country
+			res.push(res2);
+			res2 = [data[i]];
+			cur_country = data[i].Country;
 		}
 	}
-	res.push(res2)
-	console.log(res)
+	res.push(res2);
+	return res;
+}
+
+function merge_country(data) {
+	const all_country = [];
+	for (var i = 0; i < data[1].length; ++i) {
+		const found = data[0].features.find(d => d.properties.name_long === data[1][i][0].Country
+			|| d.properties.admin === data[1][i][0].Country
+			|| d.properties.brk_name === data[1][i][0].Country
+			|| d.properties.formal_en === data[1][i][0].Country
+			|| d.properties.formal_en === data[1][i][0].Country
+		);
+		if (found !== undefined) {
+			all_country.push(found);
+		} else {
+			console.log(data[1][i][0].Country);
+		}
+
+	}
+	data[0].features = all_country;
+	return data[0];
 }
 
 function make_scales(data){
@@ -36,6 +58,12 @@ function make_scales(data){
     }
 }
 
+let scale = {
+	    fill: d3.scaleOrdinal()
+	        .domain(["1. High income: OECD", "2. High income: nonOECD", "3. Upper middle income"
+			, "4. Lower middle income", "5. Low income"])
+		.range(["#47abd8", "#d2f2fc", "#fcc5c5", "#f07575", "#7d1919"])
+};
 
 function draw_map(data) {
         let proj = d3.geoMercator().fitExtent([[width/2, 0],[width, height]], data);
@@ -47,12 +75,14 @@ function draw_map(data) {
                 .append("path")
                 .attrs({
                         d: path,
-                        fill: "white",
+			//FIXME placeholder
+			fill: d => scale.fill(d.properties.income_grp),
                         "stroke-width": 1
                 });
 }
 
 Promise.all([
-    d3.json("https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson"),
+	d3.json("world_map.json"),
+    	//d3.json("https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson"),
 	d3.csv("life_expectancy_data.csv")
 ]).then(main)
