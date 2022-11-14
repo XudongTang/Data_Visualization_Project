@@ -37,11 +37,9 @@ function merge_country(data) {
 			|| d.properties.formal_en === data[1][i][0].Country
 		);
 		if (found !== undefined) {
+			found.properties.statistics = data[1][i]
 			all_country.push(found);
-		} else {
-			console.log(data[1][i][0].Country);
 		}
-
 	}
 	data[0].features = all_country;
 	return data[0];
