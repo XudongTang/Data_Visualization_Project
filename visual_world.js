@@ -5,8 +5,9 @@ let margins = {top: 50, bottom: 50, left: 50, right: 50}
 function main(data) {
 	data[1] = parse(data[1]);
 	data[0] = merge_country(data);
-	console.log(data);
 	draw_map(data[0]);
+	scales = make_scales(data[1]);
+	draw_line(data[1], scales)
 }
 
 function parse(data){
@@ -26,6 +27,8 @@ function parse(data){
 	res.push(res2);
 	return res;
 }
+
+
 
 function merge_country(data) {
 	const all_country = [];
@@ -48,14 +51,31 @@ function merge_country(data) {
 function make_scales(data){
     return{
         x: d3.scaleTime()
-        .domain(d3.extent(data[0].map(d => d.date)))
-        .range([margins.left, width - margins.right]),
+        .domain(d3.extent(data[0].map(d => d.Year)))
+        .range([width/2 + margins.left, width - margins.right]),
         y: d3.scaleLinear()
-        .domain([0, 70000])
+        .domain([0, 20])
         .range([height - margins.bottom, margins.top])
     }
 }
 
+function draw_line(data, scales){
+    path_generator = d3.line()
+    .x(d => scales.x(d.Year))
+    .y(d => scales.y(d.Alcohol));
+
+    d3.select('#series')
+    .selectAll('path')
+    .data(data).enter()
+    .append('path')
+	.attrs({
+		d: path_generator,
+		stroke: '#a8a8a8',
+		'stroke-width': 1,
+		fill: 'none'
+	})
+
+}
 let scale = {
 	    fill: d3.scaleOrdinal()
 	        .domain(["1. High income: OECD", "2. High income: nonOECD", "3. Upper middle income"
@@ -64,7 +84,7 @@ let scale = {
 };
 
 function draw_map(data) {
-        let proj = d3.geoMercator().fitExtent([[0, 0],[width, height]], data);
+        let proj = d3.geoMercator().fitExtent([[0, 0],[width/2, height]], data);
         let path = d3.geoPath().projection(proj);
 
         d3.select("#map")
@@ -75,7 +95,8 @@ function draw_map(data) {
                         d: path,
 			//FIXME placeholder
 			fill: d => scale.fill(d.properties.income_grp),
-                        "stroke-width": 1
+                        "stroke-width": 1,
+						stroke: 'black'
                 });
 }
 
