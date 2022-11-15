@@ -1,5 +1,5 @@
-let width = 2000;
-let height = 1500;
+let width = 1200;
+let height = 1800;
 let margins = {top: 50, bottom: 50, left: 50, right: 50}
 
 function main(data) {
@@ -48,16 +48,19 @@ function merge_country(data) {
 	return data[0];
 }
 
+
 function make_scales(data){
     return{
         x: d3.scaleTime()
         .domain(d3.extent(data[0].map(d => d.Year)))
-        .range([width/2 + margins.left, width - margins.right]),
+        .range([margins.left, width - margins.right]),
         y: d3.scaleLinear()
         .domain([0, 20])
-        .range([height - margins.bottom, margins.top])
+        .range([height/2 + margins.top, height - margins.bottom])
     }
 }
+
+
 
 function draw_line(data, scales){
     path_generator = d3.line()
@@ -84,7 +87,7 @@ let scale = {
 };
 
 function draw_map(data) {
-        let proj = d3.geoMercator().fitExtent([[0, 0],[width/2, height]], data);
+        let proj = d3.geoMercator().fitExtent([[0, 0],[width, height/2]], data);
         let path = d3.geoPath().projection(proj);
 
         d3.select("#map")
@@ -96,7 +99,7 @@ function draw_map(data) {
 			//FIXME placeholder
 			fill: d => scale.fill(d.properties.income_grp),
                         "stroke-width": 1,
-						stroke: 'black'
+			stroke: 'black'
                 });
 }
 
