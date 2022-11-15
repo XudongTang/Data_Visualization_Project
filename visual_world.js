@@ -3,11 +3,13 @@ let height = 1800;
 let margins = {top: 50, bottom: 50, left: 50, right: 50}
 
 function main(data) {
+	let outcome = 'Life expectancy '
 	data[1] = parse(data[1]);
 	data[0] = merge_country(data);
 	draw_map(data[0]);
-	scales = make_scales(data[1]);
-	draw_line(data[1], scales)
+	console.log(data)
+	// scales = make_scales(data[1]);
+	// draw_line(data[1], scales)
 }
 
 function parse(data){
@@ -80,15 +82,15 @@ function draw_line(data, scales){
 
 }
 let scale = {
-	    fill: d3.scaleOrdinal()
-	        .domain(["1. High income: OECD", "2. High income: nonOECD", "3. Upper middle income"
-			, "4. Lower middle income", "5. Low income"])
-		.range(["#47abd8", "#d2f2fc", "#fcc5c5", "#f07575", "#7d1919"])
+	    fill: d3.scaleQuantize()
+		.domain([40, 90])
+		.range(d3.schemeReds[9])
 };
 
 function draw_map(data) {
         let proj = d3.geoMercator().fitExtent([[0, 0],[width, height/2]], data);
         let path = d3.geoPath().projection(proj);
+		console.log(data.features[138].properties.statistics[0]['Life expectancy'])
 
         d3.select("#map")
                 .selectAll("path")
@@ -97,14 +99,14 @@ function draw_map(data) {
                 .attrs({
                         d: path,
 			//FIXME placeholder
-			fill: d => scale.fill(d.properties.income_grp),
-                        "stroke-width": 1,
-			stroke: 'black'
+						fill: d => scale.fill(d.properties.statistics[15].Alcohol),
+            			"stroke-width": 1,
+						stroke: 'black'
                 });
 }
 
 Promise.all([
-	d3.json("world_map.json"),
+	d3.json("world_map.json", d3.autoType),
     	//d3.json("https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson"),
-	d3.csv("life_expectancy_data.csv")
+	d3.csv("life_expectancy_data.csv", d3.autoType)
 ]).then(main)
