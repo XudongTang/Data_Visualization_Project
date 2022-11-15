@@ -3,11 +3,11 @@ let height = 1800;
 let margins = {top: 50, bottom: 50, left: 50, right: 50}
 
 function main(data) {
-	let outcome = 'Life expectancy '
 	data[1] = parse(data[1]);
-	data[0] = merge_country(data);
-	draw_map(data[0]);
-	console.log(data)
+	data = merge_country(data);
+	console.log(data);
+	draw_map(data);
+	//console.log(data)
 	// scales = make_scales(data[1]);
 	// draw_line(data[1], scales)
 }
@@ -19,10 +19,24 @@ function parse(data){
 	for(let i = 0; i < data.length; i++){
 		data[i].Year = (new Date(data[i].Year + '-01-03')).getFullYear();
 		if(data[i].Country === cur_country){
-			res2.splice(0, 0, data[i]);
+			var element = [];
+			element.Year = data[i].Year;
+			element.Country = data[i].Country;
+			element.Status = data[i].Status;
+			element.Life_expectancy = data[i]["Life expectancy "];
+			element.Adult_mortality = data[i]["Adult Mortality"];
+			element.Infant_death = data[i]["infant deaths"];
+			res2.splice(0, 0, element);
 		}else{
 			res.push(res2);
-			res2 = [data[i]];
+			var element = [];
+			element.Year = data[i].Year;
+			element.Country = data[i].Country;
+			element.Status = data[i].Status;
+			element.Life_expectancy = data[i]["Life expectancy "];
+			element.Adult_mortality = data[i]["Adult Mortality"];
+			element.Infant_death = data[i]["infant deaths"];
+			res2 = [element];
 			cur_country = data[i].Country;
 		}
 	}
@@ -83,14 +97,13 @@ function draw_line(data, scales){
 }
 let scale = {
 	    fill: d3.scaleQuantize()
-		.domain([40, 90])
-		.range(d3.schemeReds[9])
+		.domain([45, 80])
+		.range(d3.schemeBlues[9])
 };
 
 function draw_map(data) {
         let proj = d3.geoMercator().fitExtent([[0, 0],[width, height/2]], data);
         let path = d3.geoPath().projection(proj);
-		console.log(data.features[138].properties.statistics[0]['Life expectancy'])
 
         d3.select("#map")
                 .selectAll("path")
@@ -98,10 +111,9 @@ function draw_map(data) {
                 .append("path")
                 .attrs({
                         d: path,
-			//FIXME placeholder
-						fill: d => scale.fill(d.properties.statistics[15].Alcohol),
-            			"stroke-width": 1,
-						stroke: 'black'
+			fill: d => scale.fill(d.properties.statistics[0]?.Life_expectancy),
+            		"stroke-width": 1,
+			stroke: 'black'
                 });
 }
 
