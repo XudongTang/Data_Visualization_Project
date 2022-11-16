@@ -5,3 +5,8 @@
 	stroke:#0c0c0c;
 }
 
+select {
+	width: 120px;
+	height: 40px;
+}
+

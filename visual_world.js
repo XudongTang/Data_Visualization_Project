@@ -7,7 +7,9 @@ function main(data) {
 	data = merge_country(data);
 	draw_map(data);
 	select_cont(data);
+	select_var(data);	
 	
+
 	
 	//console.log(data)
 	scales = make_scales(data);
@@ -92,6 +94,7 @@ function update_line(data, scales){
 
 		
 	)
+
 }
 
 function parse(data){
@@ -241,14 +244,28 @@ function update_axes(scales){
     .call(y_axis);
 }
 
+function select_var(data) {
+	var choice = ["Life_expectancy", "Adult_mortality", "Infant_death", "Status"];
+	var select = d3.select("#select_variable")
+			.on('change', function(event, d) {
+				
+			});
+	var options = select.selectAll('option')
+				.data(choice).enter()
+				.append('option')
+				.text(function(d) {
+					return d;
+				})
+				.attr("value", function(d){
+					return d;
+				})
+}
+
 function select_cont(data) {
 
 	var choice = ["All", "Asia", "Europe", "Africa", "Americas", "Oceania"];
-	var className = 'select_cont';
 	
-	var select = d3.select('.button')
-			.append ('select')
-			.attr('class', className)
+	var select = d3.select('#select_cont')
 			.on('change', function(event, d) {
 				const selectedOption = d3.select(this).property("value");
 				update_cont(selectedOption, data);
@@ -265,9 +282,7 @@ function select_cont(data) {
 				.attr("value", function(d) {
 					return d;
 				});
-	d3.select('.button')
-		.append('select')
-		.attr('class', 'select_sub_cont');
+
 
 }
 
@@ -313,13 +328,15 @@ function update_cont(select, data) {
 	} else if (select === "Americas") {
 		sub_count = ["All", "Caribbean", "South America", "Central America", "Northern America"];
 	} else if (select === "Oceania") {
-		sub_count = ["All", "Australia and New Zealand", "Polynesia", "Melanesia", "Micronesia"];
+		sub_count = ["All", "Australia and New Zealand", "Melanesia", "Micronesia"];
 	} else {
 		sub_count = ["All"];
 	}
 
 	
-	var select = d3.select('.select_sub_cont')
+
+	var select = d3.select('#select_sub_cont')
+
 			.on('change', function(event, d) {
 				const selectedOption = d3.select(this).property("value");
 				update_sub_cont(selectedOption, data, selected);
@@ -350,7 +367,6 @@ function update_sub_cont(select, data, prevSelect) {
 		for (var i = 0; i < data.features.length; ++i) {
 			if (data.features[i].properties.adm0_a3 === "RUS" ||
 				data.features[i].properties.adm0_a3 === "NZL"||	
-				data.features[i].properties.adm0_a3 === "TUV"||
 				data.features[i].properties.adm0_a3 === "FJI"||
 				data.features[i].properties.adm0_a3 === "KIR"||
 				data.features[i].properties.adm0_a3 === "ESP"||
