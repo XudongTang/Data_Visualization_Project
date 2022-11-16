@@ -6,7 +6,13 @@ function main(data) {
 	data[1] = parse(data[1]);
 	data = merge_country(data);
 	console.log(data);
+	select_cont();
 	draw_map(data);
+	/*
+	for (var i = 0; i < data.features.length; ++i) {
+		console.log(data.features[i].properties.region_un);
+	}
+	*/
 	//console.log(data)
 	// scales = make_scales(data[1]);
 	// draw_line(data[1], scales)
@@ -76,7 +82,26 @@ function make_scales(data){
     }
 }
 
-
+function select_cont() {
+	var choice = ["All", "Asia", "Europe", "Africa", "Americas", "Oceania"];
+	var className = 'select_cont';
+	var select = d3.select('body')
+			.append ('select')
+			.attr('class', className)
+	//		.on('change', selection(className));
+	var options = select.selectAll('option')
+				.data(choice).enter()
+				.append('option')
+				.text(function(d) {
+					return d;
+				});
+}
+/*
+function selection(name) {
+	selectValue = d3.select(name).property("value");
+	
+}
+*/
 
 function draw_line(data, scales){
     path_generator = d3.line()
