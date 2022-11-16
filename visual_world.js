@@ -81,11 +81,8 @@ function make_scales(data){
 function select_cont(data) {
 
 	var choice = ["All", "Asia", "Europe", "Africa", "Americas", "Oceania"];
-	var className = 'select_cont';
 	
-	var select = d3.select('.button')
-			.append ('select')
-			.attr('class', className)
+	var select = d3.select('#select_cont')
 			.on('change', function(event, d) {
 				const selectedOption = d3.select(this).property("value");
 				update_cont(selectedOption, data);
@@ -99,9 +96,6 @@ function select_cont(data) {
 				.attr("value", function(d) {
 					return d;
 				});
-	d3.select('.button')
-		.append('select')
-		.attr('class', 'select_sub_count');
 
 }
 
@@ -153,7 +147,7 @@ function update_cont(select, data) {
 	}
 
 	
-	var select = d3.select('.select_sub_count')
+	var select = d3.select('#select_sub_cont')
 			.on('change', function(event, d) {
 				const selectedOption = d3.select(this).property("value");
 				update_sub_cont(selectedOption, data, selected);

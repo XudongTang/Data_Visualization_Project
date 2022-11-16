@@ -5,3 +5,12 @@
 	stroke:#0c0c0c;
 }
 
+#select_cont {
+	width: 120px;
+	height: 40px;
+}
+
+#select_sub_cont {
+	width: 120px;
+	height: 40px;
+}
