@@ -1,15 +1,15 @@
 let width = 900;
-let height = 900;
-let margins = {top: 50, bottom: 50, left: 50, right: 50}
+let height = 600;
+let margins = {top: 20, bottom: 20, left: 20, right: 20}
 
 function main(data) {
 	data[1] = parse(data[1]);
 	data = merge_country(data);
 	draw_map(data);
 	select_cont(data);
+	select_var(data);	
 	
-	
-	//console.log(data)
+	console.log(data)
 	// scales = make_scales(data[1]);
 	// draw_line(data[1], scales)
 }
@@ -78,6 +78,23 @@ function make_scales(data){
     }
 }
 
+function select_var(data) {
+	var choice = ["Life_expectancy", "Adult_mortality", "Infant_death", "Status"];
+	var select = d3.select("#select_variable")
+			.on('change', function(event, d) {
+				
+			});
+	var options = select.selectAll('option')
+				.data(choice).enter()
+				.append('option')
+				.text(function(d) {
+					return d;
+				})
+				.attr("value", function(d){
+					return d;
+				})
+}
+
 function select_cont(data) {
 
 	var choice = ["All", "Asia", "Europe", "Africa", "Americas", "Oceania"];
@@ -141,7 +158,7 @@ function update_cont(select, data) {
 	} else if (select === "Americas") {
 		sub_count = ["All", "Caribbean", "South America", "Central America", "Northern America"];
 	} else if (select === "Oceania") {
-		sub_count = ["All", "Australia and New Zealand", "Polynesia", "Melanesia", "Micronesia"];
+		sub_count = ["All", "Australia and New Zealand", "Melanesia", "Micronesia"];
 	} else {
 		sub_count = ["All"];
 	}
@@ -175,7 +192,6 @@ function update_sub_cont(select, data, prevSelect) {
 		for (var i = 0; i < data.features.length; ++i) {
 			if (data.features[i].properties.adm0_a3 === "RUS" ||
 				data.features[i].properties.adm0_a3 === "NZL"||	
-				data.features[i].properties.adm0_a3 === "TUV"||
 				data.features[i].properties.adm0_a3 === "FJI"||
 				data.features[i].properties.adm0_a3 === "KIR"||
 				data.features[i].properties.adm0_a3 === "ESP"||
