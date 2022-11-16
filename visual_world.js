@@ -9,9 +9,92 @@ function main(data) {
 	select_cont(data);
 	select_var(data);	
 	
-	console.log(data)
-	// scales = make_scales(data[1]);
-	// draw_line(data[1], scales)
+
+	
+	//console.log(data)
+	scales = make_scales(data);
+	draw_line(data, scales)
+	add_axes(scales)
+}
+
+function find_domain(data){
+	var region_un = d3.select('.select_cont').property('value');
+	var subregion = d3.select('.select_sub_cont').property('value')
+	var selected_countries = []
+	var target = 'Life_expectancy'
+
+	if(region_un === 'All'){
+		for(let i = 0; i < data.features.length; i++){
+			selected_countries.push(data.features[i].properties.statistics)
+		}
+	}else if(subregion === 'All'){
+		for(let i = 0; i < data.features.length; i++){
+			if(data.features[i].properties.region_un === region_un){
+				selected_countries.push(data.features[i].properties.statistics)
+			}
+		}
+	}else{
+		for(let i = 0; i < data.features.length; i++){
+			if(data.features[i].properties.region_un === region_un && data.features[i].properties.subregion === subregion){
+				selected_countries.push(data.features[i].properties.statistics)
+			}
+		}
+	}
+	res = []
+	for(let i = 0; i < selected_countries.length; i++){
+		for(let j = 0; j < selected_countries[0].length; j++){
+			res.push(selected_countries[i][j][target])
+		}
+	}
+	return d3.extent(res)
+}
+
+function update_line(data, scales){
+	var region_un = d3.select('.select_cont').property('value');
+	var subregion = d3.select('.select_sub_cont').property('value')
+	var selected_countries = []
+	var target = 'Life expectancy'
+
+	if(region_un === 'All'){
+		for(let i = 0; i < data.features.length; i++){
+			selected_countries.push(data.features[i].properties.statistics)
+		}
+	}else if(subregion === 'All'){
+		for(let i = 0; i < data.features.length; i++){
+			if(data.features[i].properties.region_un === region_un){
+				selected_countries.push(data.features[i].properties.statistics)
+			}
+		}
+	}else{
+		for(let i = 0; i < data.features.length; i++){
+			if(data.features[i].properties.region_un === region_un && data.features[i].properties.subregion === subregion){
+				selected_countries.push(data.features[i].properties.statistics)
+			}
+		}
+	}
+
+	console.log(selected_countries)
+	
+	path_generator = d3.line()
+    .x(d => scales.x(d.Year))
+    .y(d => scales.y(d.Life_expectancy));
+
+    d3.select('#series')
+    .selectAll('path')
+    .data(selected_countries)
+	.join(
+				enter => enter.append('path').attrs({
+			d: path_generator,
+			stroke: '#a8a8a8',
+			'stroke-width': 1,
+			fill: 'none'
+		}),
+		update => update.attr('d', path_generator),
+		exit => exit.remove(),
+
+		
+	)
+
 }
 
 function parse(data){
@@ -57,7 +140,17 @@ function merge_country(data) {
 			|| d.properties.formal_en === data[1][i][0].Country
 			|| d.properties.formal_en === data[1][i][0].Country
 		);
-		if (found !== undefined) {
+		if (found !== undefined 
+		&& found.properties.adm0_a3 !== 'COK' 
+		&& found.properties.adm0_a3 !== 'DMA' 
+		&& found.properties.adm0_a3 !== 'MHL'
+		&& found.properties.adm0_a3 !== 'MCO'
+		&& found.properties.adm0_a3 !== 'NRU'
+		&& found.properties.adm0_a3 !== 'NIU'
+		&& found.properties.adm0_a3 !== 'PLW'
+		&& found.properties.adm0_a3 !== 'KNA'
+		&& found.properties.adm0_a3 !== 'SMR'
+		&& found.properties.adm0_a3 !== 'TUV') {
 			found.properties.statistics = data[1][i]
 			all_country.push(found);
 		}
@@ -68,14 +161,87 @@ function merge_country(data) {
 
 
 function make_scales(data){
+	var region_un = d3.select('.select_cont').property('value');
+	var subregion = d3.select('.select_sub_cont').property('value')
+	var years = [2000, 2015]
+	var values = find_domain(data)
+	var selected_countries = []
+	if(region_un === 'All'){
+		for(let i = 0; i < data.features.length; i++){
+			selected_countries.push(data.features[i].properties.statistics)
+		}
+	}else if(subregion === 'All'){
+		for(let i = 0; i < data.features.length; i++){
+			if(data.features[i].properties.region_un === region_un){
+				selected_countries.push(data.features[i].properties.statistics)
+			}
+		}
+	}else{
+		for(let i = 0; i < data.features.length; i++){
+			if(data.features[i].properties.region_un === region_un && data.features[i].properties.subregion === subregion){
+				selected_countries.push(data.features[i].properties.statistics)
+			}
+		}
+	}
+
     return{
         x: d3.scaleTime()
-        .domain(d3.extent(data[0].map(d => d.Year)))
+        .domain(years)
         .range([margins.left, width - margins.right]),
         y: d3.scaleLinear()
-        .domain([0, 20])
-        .range([height/2 + margins.top, height - margins.bottom])
+        .domain(values)
+        .range([height - margins.bottom, margins.top])
     }
+
+}
+
+function add_axes(scales){
+    let x_axis = d3.axisBottom()
+    .scale(scales.x),
+    y_axis = d3.axisLeft()
+    .scale(scales.y);
+
+    d3.select('#axes')
+    .append('g')
+    .attrs({
+        id: 'x_axis',
+        transform: `translate(0, ${height - margins.bottom})`
+    })
+    .call(x_axis);
+
+    d3.select('#axes')
+    .append('g')
+    .attrs({
+        id: 'y_axis',
+        transform: `translate(${margins.left}, 0)`
+    })
+    .call(y_axis);
+}
+
+function update_axes(scales){
+	let x_axis = d3.axisBottom()
+    .scale(scales.x),
+    y_axis = d3.axisLeft()
+    .scale(scales.y);
+
+	d3.select('#x_axis').remove()
+	d3.select('#y_axis').remove()
+
+	d3.select('#axes')
+    .append('g')
+    .attrs({
+        id: 'x_axis',
+        transform: `translate(0, ${height - margins.bottom})`
+    })
+    .call(x_axis);
+
+    d3.select('#axes')
+    .append('g')
+    .attrs({
+        id: 'y_axis',
+        transform: `translate(${margins.left}, 0)`
+    })
+    .call(y_axis);
 }
 
 function select_var(data) {
@@ -103,6 +269,9 @@ function select_cont(data) {
 			.on('change', function(event, d) {
 				const selectedOption = d3.select(this).property("value");
 				update_cont(selectedOption, data);
+				scales = make_scales(data)
+				update_line(data, scales)
+				update_axes(scales)
 			});
 	var options = select.selectAll('option')
 				.data(choice).enter()
@@ -113,6 +282,7 @@ function select_cont(data) {
 				.attr("value", function(d) {
 					return d;
 				});
+
 
 }
 
@@ -164,10 +334,15 @@ function update_cont(select, data) {
 	}
 
 	
+
 	var select = d3.select('#select_sub_cont')
+
 			.on('change', function(event, d) {
 				const selectedOption = d3.select(this).property("value");
 				update_sub_cont(selectedOption, data, selected);
+				scales = make_scales(data)
+				update_line(data, scales)
+				update_axes(scales)
 			});
 
 	var options = select.selectAll('option')
@@ -211,8 +386,6 @@ function update_sub_cont(select, data, prevSelect) {
 	} else {
 		selected = prevSelect;
 	}
-
-	console.log(selected);
 	update_map(selected);
 	
 }
@@ -247,13 +420,36 @@ function update_map(selected) {
 
 
 function draw_line(data, scales){
-    path_generator = d3.line()
+	var region_un = d3.select('.select_cont').property('value');
+	var subregion = d3.select('.select_sub_cont').property('value')
+	var selected_countries = []
+	var target = 'Life expectancy'
+
+	if(region_un === 'All'){
+		for(let i = 0; i < data.features.length; i++){
+			selected_countries.push(data.features[i].properties.statistics)
+		}
+	}else if(subregion === 'All'){
+		for(let i = 0; i < data.features.length; i++){
+			if(data.features[i].properties.region_un === region_un){
+				selected_countries.push(data.features[i].properties.statistics)
+			}
+		}
+	}else{
+		for(let i = 0; i < data.features.length; i++){
+			if(data.features[i].properties.region_un === region_un && data.features[i].properties.subregion === subregion){
+				selected_countries.push(data.features[i].properties.statistics)
+			}
+		}
+	}
+	
+	path_generator = d3.line()
     .x(d => scales.x(d.Year))
-    .y(d => scales.y(d.Alcohol));
+    .y(d => scales.y(d.Life_expectancy));
 
     d3.select('#series')
     .selectAll('path')
-    .data(data).enter()
+    .data(selected_countries).enter()
     .append('path')
 	.attrs({
 		d: path_generator,
