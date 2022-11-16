@@ -18,8 +18,8 @@ function main(data) {
 }
 
 function find_domain(data){
-	var region_un = d3.select('.select_cont').property('value');
-	var subregion = d3.select('.select_sub_cont').property('value')
+	var region_un = d3.select('#select_cont').property('value');
+	var subregion = d3.select('#select_sub_cont').property('value')
 	var selected_countries = []
 	var target = 'Life_expectancy'
 
@@ -50,8 +50,8 @@ function find_domain(data){
 }
 
 function update_line(data, scales){
-	var region_un = d3.select('.select_cont').property('value');
-	var subregion = d3.select('.select_sub_cont').property('value')
+	var region_un = d3.select('#select_cont').property('value');
+	var subregion = d3.select('#select_sub_cont').property('value')
 	var selected_countries = []
 	var target = 'Life expectancy'
 
@@ -161,8 +161,8 @@ function merge_country(data) {
 
 
 function make_scales(data){
-	var region_un = d3.select('.select_cont').property('value');
-	var subregion = d3.select('.select_sub_cont').property('value')
+	var region_un = d3.select('#select_cont').property('value');
+	var subregion = d3.select('#select_sub_cont').property('value')
 	var years = [2000, 2015]
 	var values = find_domain(data)
 	var selected_countries = []
@@ -420,8 +420,8 @@ function update_map(selected) {
 
 
 function draw_line(data, scales){
-	var region_un = d3.select('.select_cont').property('value');
-	var subregion = d3.select('.select_sub_cont').property('value')
+	var region_un = d3.select('#select_cont').property('value');
+	var subregion = d3.select('#select_sub_cont').property('value')
 	var selected_countries = []
 	var target = 'Life expectancy'
 
