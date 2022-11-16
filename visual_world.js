@@ -13,13 +13,13 @@ function main(data) {
 	
 	//console.log(data)
 	scales = make_scales(data);
-	draw_line(data, scales)
+	// draw_line(data, scales)
 	add_axes(scales)
 }
 
 function find_domain(data){
-	var region_un = d3.select('.select_cont').property('value');
-	var subregion = d3.select('.select_sub_cont').property('value')
+	var region_un = d3.select('#select_cont').property('value');
+	var subregion = d3.select('#select_sub_cont').property('value')
 	var selected_countries = []
 	var target = 'Life_expectancy'
 
@@ -50,8 +50,8 @@ function find_domain(data){
 }
 
 function update_line(data, scales){
-	var region_un = d3.select('.select_cont').property('value');
-	var subregion = d3.select('.select_sub_cont').property('value')
+	var region_un = d3.select('#select_cont').property('value');
+	var subregion = d3.select('#select_sub_cont').property('value')
 	var selected_countries = []
 	var target = 'Life expectancy'
 
@@ -83,14 +83,15 @@ function update_line(data, scales){
     .selectAll('path')
     .data(selected_countries)
 	.join(
-				enter => enter.append('path').attrs({
+		enter => enter.append('path')
+				.transition().duration(1000).attrs({
 			d: path_generator,
 			stroke: '#a8a8a8',
 			'stroke-width': 1,
 			fill: 'none'
 		}),
-		update => update.attr('d', path_generator),
-		exit => exit.remove(),
+		update => update.transition().duration(1000).attr('d', path_generator),
+		exit => exit.transition().duration(200).remove(),
 
 		
 	)
@@ -161,8 +162,8 @@ function merge_country(data) {
 
 
 function make_scales(data){
-	var region_un = d3.select('.select_cont').property('value');
-	var subregion = d3.select('.select_sub_cont').property('value')
+	var region_un = d3.select('#select_cont').property('value');
+	var subregion = d3.select('#select_sub_cont').property('value')
 	var years = [2000, 2015]
 	var values = find_domain(data)
 	var selected_countries = []
@@ -420,8 +421,8 @@ function update_map(selected) {
 
 
 function draw_line(data, scales){
-	var region_un = d3.select('.select_cont').property('value');
-	var subregion = d3.select('.select_sub_cont').property('value')
+	var region_un = d3.select('#select_cont').property('value');
+	var subregion = d3.select('#select_sub_cont').property('value')
 	var selected_countries = []
 	var target = 'Life expectancy'
 
