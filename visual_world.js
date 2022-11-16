@@ -5,13 +5,9 @@ let margins = {top: 50, bottom: 50, left: 50, right: 50}
 function main(data) {
 	data[1] = parse(data[1]);
 	data = merge_country(data);
-	console.log(data);
 	draw_map(data);
 	select_cont(data);
 	
-	for (var i = 0; i < data.features.length; ++i) {
-		console.log(data.features[i].properties.subregion);
-	}
 	
 	//console.log(data)
 	// scales = make_scales(data[1]);
@@ -116,6 +112,20 @@ function update_cont(select, data) {
 		const countries = [];
 	
 		for (var i = 0; i < data.features.length; ++i) {
+			if (data.features[i].properties.adm0_a3 === "RUS" ||
+				data.features[i].properties.adm0_a3 === "NZL" ||
+				data.features[i].properties.subregion === "Polynesia"||
+				data.features[i].properties.adm0_a3 === "FJI"||
+				data.features[i].properties.adm0_a3 === "KIR"||
+				data.features[i].properties.adm0_a3 === "ESP"||
+				data.features[i].properties.adm0_a3 === "PRT"||
+				data.features[i].properties.adm0_a3 === "FRA"||
+				data.features[i].properties.adm0_a3 === "NLD"||
+				data.features[i].properties.adm0_a3 === "NOR"||
+				data.features[i].properties.adm0_a3 === "USA"
+			) {
+				continue;
+			}
 			if (data.features[i].properties.region_un === select) {
 				countries.push(data.features[i]);
 			}
@@ -127,17 +137,17 @@ function update_cont(select, data) {
 	var sub_count = [];
 
 	if (select === "Asia") {
-		sub_count = ["Southern Asia", "Western Asia", "South-Eastern Asia",
+		sub_count = ["All", "Southern Asia", "Western Asia", "South-Eastern Asia",
 			"Eastern Asia", "Central Asia"];
 	} else if (select === "Europe") {
-		sub_count = ["Southern Europe", "Western Europe", "Eastern Europe", "Northern Europe"];
+		sub_count = ["All", "Southern Europe", "Western Europe", "Eastern Europe", "Northern Europe"];
 	} else if (select === "Africa") {
-		sub_count = ["Northern Africa", "Middle Africa", "Western Africa", 
+		sub_count = ["All", "Northern Africa", "Middle Africa", "Western Africa", 
 			"Southern Africa", "Eastern Africa"];
 	} else if (select === "Americas") {
-		sub_count = ["Caribbean", "South America", "Central America", "Northern America"];
+		sub_count = ["All", "Caribbean", "South America", "Central America", "Northern America"];
 	} else if (select === "Oceania") {
-		sub_count = ["Australia and New Zealand", "Polynesia", "Melanesia", "Micronesia"];
+		sub_count = ["All", "Australia and New Zealand", "Polynesia", "Melanesia", "Micronesia"];
 	} else {
 		sub_count = ["All"];
 	}
@@ -146,7 +156,7 @@ function update_cont(select, data) {
 	var select = d3.select('.select_sub_count')
 			.on('change', function(event, d) {
 				const selectedOption = d3.select(this).property("value");
-				update_sub_cont(selectedOption, data);
+				update_sub_cont(selectedOption, data, selected);
 			});
 
 	var options = select.selectAll('option')
@@ -163,18 +173,36 @@ function update_cont(select, data) {
 }
 
 
-function update_sub_cont(select, data) {
-	const selected = structuredClone(data);
+function update_sub_cont(select, data, prevSelect) {
+	var selected = structuredClone(data);
 	if (select !== "All") {
 		const countries = [];
 	
 		for (var i = 0; i < data.features.length; ++i) {
+			if (data.features[i].properties.adm0_a3 === "RUS" ||
+				data.features[i].properties.adm0_a3 === "NZL"||	
+				data.features[i].properties.adm0_a3 === "TUV"||
+				data.features[i].properties.adm0_a3 === "FJI"||
+				data.features[i].properties.adm0_a3 === "KIR"||
+				data.features[i].properties.adm0_a3 === "ESP"||
+				data.features[i].properties.adm0_a3 === "PRT"||
+				data.features[i].properties.adm0_a3 === "FRA"||
+				data.features[i].properties.adm0_a3 === "NLD"||
+				data.features[i].properties.adm0_a3 === "NOR"||
+				data.features[i].properties.adm0_a3 === "USA"
+			) {
+				continue;
+			}
 			if (data.features[i].properties.subregion === select) {
 				countries.push(data.features[i]);
 			}
 		}
 		selected.features = countries;
+	} else {
+		selected = prevSelect;
 	}
+
+	console.log(selected);
 	update_map(selected);
 	
 }
