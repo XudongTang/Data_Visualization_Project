@@ -215,27 +215,18 @@ function update_map(selected) {
 		.selectAll("path")
 		.data(selected.features, d => d.properties.adm0_a3)
 		.join(
-			
+		
 			function (exit) {
 				return exit.remove();
 			},
 			function (enter) {
 				return enter.transition().duration(1000).attrs({
 					d: newpath,
-					fill: d => scale.fill(d.properties.statistics[0]?.Life_expectancy),
-            				"stroke-width": 1,
-					"stroke": "black",
-					name: d => d.properties.adm0_a3
-
 				})
 			},
 			function (update) {
 				return update.transition().duration(1000).attrs({
 					d: newpath,
-					fill: d => scale.fill(d.properties.statistics[0]?.Life_expectancy),
-            				"stroke-width": 1,
-					"stroke": "black",
-					name: d => d.properties.adm0_a3
 				})
 			}
 
