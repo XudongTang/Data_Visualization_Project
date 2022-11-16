@@ -1,4 +1,4 @@
-let width = 1200;
+let width = 900;
 let height = 1800;
 let margins = {top: 50, bottom: 50, left: 50, right: 50}
 
@@ -6,13 +6,13 @@ function main(data) {
 	data[1] = parse(data[1]);
 	data = merge_country(data);
 	console.log(data);
-	select_cont();
 	draw_map(data);
-	/*
+	select_cont(data);
+	
 	for (var i = 0; i < data.features.length; ++i) {
-		console.log(data.features[i].properties.region_un);
+		console.log(data.features[i].properties.subregion);
 	}
-	*/
+	
 	//console.log(data)
 	// scales = make_scales(data[1]);
 	// draw_line(data[1], scales)
@@ -82,26 +82,140 @@ function make_scales(data){
     }
 }
 
-function select_cont() {
+function select_cont(data) {
+
 	var choice = ["All", "Asia", "Europe", "Africa", "Americas", "Oceania"];
 	var className = 'select_cont';
-	var select = d3.select('body')
+	
+	var select = d3.select('.button')
 			.append ('select')
 			.attr('class', className)
-	//		.on('change', selection(className));
+			.on('change', function(event, d) {
+				const selectedOption = d3.select(this).property("value");
+				update_cont(selectedOption, data);
+			});
 	var options = select.selectAll('option')
 				.data(choice).enter()
 				.append('option')
 				.text(function(d) {
 					return d;
+				})
+				.attr("value", function(d) {
+					return d;
 				});
+	d3.select('.button')
+		.append('select')
+		.attr('class', 'select_sub_count');
+
 }
-/*
-function selection(name) {
-	selectValue = d3.select(name).property("value");
+
+
+function update_cont(select, data) {
+	const selected = structuredClone(data);
+	if (select !== "All") {
+		const countries = [];
+	
+		for (var i = 0; i < data.features.length; ++i) {
+			if (data.features[i].properties.region_un === select) {
+				countries.push(data.features[i]);
+			}
+		}
+		selected.features = countries;
+	}
+	update_map(selected);	
+
+	var sub_count = [];
+
+	if (select === "Asia") {
+		sub_count = ["Southern Asia", "Western Asia", "South-Eastern Asia",
+			"Eastern Asia", "Central Asia"];
+	} else if (select === "Europe") {
+		sub_count = ["Southern Europe", "Western Europe", "Eastern Europe", "Northern Europe"];
+	} else if (select === "Africa") {
+		sub_count = ["Northern Africa", "Middle Africa", "Western Africa", 
+			"Southern Africa", "Eastern Africa"];
+	} else if (select === "Americas") {
+		sub_count = ["Caribbean", "South America", "Central America", "Northern America"];
+	} else if (select === "Oceania") {
+		sub_count = ["Australia and New Zealand", "Polynesia", "Melanesia", "Micronesia"];
+	} else {
+		sub_count = ["All"];
+	}
+
+	
+	var select = d3.select('.select_sub_count')
+			.on('change', function(event, d) {
+				const selectedOption = d3.select(this).property("value");
+				update_sub_cont(selectedOption, data);
+			});
+
+	var options = select.selectAll('option')
+				.data(sub_count);
+	options.exit().remove();
+	options.enter().append('option')
+		.merge(options)
+		.text(function(d) {
+			return d;
+		})
+		.attr("value", function(d) {
+			return d;
+		});
+}
+
+
+function update_sub_cont(select, data) {
+	const selected = structuredClone(data);
+	if (select !== "All") {
+		const countries = [];
+	
+		for (var i = 0; i < data.features.length; ++i) {
+			if (data.features[i].properties.subregion === select) {
+				countries.push(data.features[i]);
+			}
+		}
+		selected.features = countries;
+	}
+	update_map(selected);
 	
 }
-*/
+
+function update_map(selected) {
+
+        let newproj = d3.geoMercator().fitExtent([[0, 0],[width, height/2]], selected);
+        let newpath = d3.geoPath().projection(newproj);
+	d3.select("#map")
+		.selectAll("path")
+		.data(selected.features, d => d.properties.adm0_a3)
+		.join(
+			
+			function (exit) {
+				return exit.remove();
+			},
+			function (enter) {
+				return enter.transition().duration(1000).attrs({
+					d: newpath,
+					fill: d => scale.fill(d.properties.statistics[0]?.Life_expectancy),
+            				"stroke-width": 1,
+					"stroke": "black",
+					name: d => d.properties.adm0_a3
+
+				})
+			},
+			function (update) {
+				return update.transition().duration(1000).attrs({
+					d: newpath,
+					fill: d => scale.fill(d.properties.statistics[0]?.Life_expectancy),
+            				"stroke-width": 1,
+					"stroke": "black",
+					name: d => d.properties.adm0_a3
+				})
+			}
+
+
+		);
+}
+
+
 
 function draw_line(data, scales){
     path_generator = d3.line()
@@ -138,7 +252,8 @@ function draw_map(data) {
                         d: path,
 			fill: d => scale.fill(d.properties.statistics[0]?.Life_expectancy),
             		"stroke-width": 1,
-			stroke: 'black'
+			"stroke": "black",
+			name: d => d.properties.adm0_a3
                 });
 }
 
