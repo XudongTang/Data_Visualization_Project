@@ -1,5 +1,5 @@
 let width = 900;
-let height = 1800;
+let height = 900;
 let margins = {top: 50, bottom: 50, left: 50, right: 50}
 
 function main(data) {
@@ -209,7 +209,7 @@ function update_sub_cont(select, data, prevSelect) {
 
 function update_map(selected) {
 
-        let newproj = d3.geoMercator().fitExtent([[0, 0],[width, height/2]], selected);
+        let newproj = d3.geoMercator().fitExtent([[0, 0],[width, height]], selected);
         let newpath = d3.geoPath().projection(newproj);
 	d3.select("#map")
 		.selectAll("path")
@@ -269,7 +269,7 @@ let scale = {
 };
 
 function draw_map(data) {
-        let proj = d3.geoMercator().fitExtent([[0, 0],[width, height/2]], data);
+        let proj = d3.geoMercator().fitExtent([[0, 0],[width, height]], data);
         let path = d3.geoPath().projection(proj);
 
         d3.select("#map")
