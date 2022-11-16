@@ -315,7 +315,7 @@ function update_cont(select, data) {
 		selected.features = countries;
 	}
 	update_map(selected);	
-
+	d3.select('#select_sub_cont').property("value", "All");
 	var sub_count = [];
 
 	if (select === "Asia") {
@@ -335,9 +335,11 @@ function update_cont(select, data) {
 	}
 
 	
-
+	
 	var select = d3.select('#select_sub_cont')
-
+		//	.property("selected", function(d){
+		//		return d = "All";
+		//	})
 			.on('change', function(event, d) {
 				const selectedOption = d3.select(this).property("value");
 				update_sub_cont(selectedOption, data, selected);
