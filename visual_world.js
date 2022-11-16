@@ -5,11 +5,12 @@ let margins = {top: 20, bottom: 20, left: 20, right: 20}
 function main(data) {
 	data[1] = parse(data[1]);
 	data = merge_country(data);
-	draw_map(data);
+
+	map_scale = map_scale();
+	draw_map(data, map_scale);
 	select_cont(data);
 	select_var(data);	
 	
-
 	
 	//console.log(data)
 	scales = make_scales(data);
@@ -17,12 +18,10 @@ function main(data) {
 	add_axes(scales)
 }
 
-function find_domain(data){
+function line_select_country(data) {
+	var selected_countries = [];
 	var region_un = d3.select('#select_cont').property('value');
 	var subregion = d3.select('#select_sub_cont').property('value')
-	var selected_countries = []
-	var target = 'Life_expectancy'
-
 	if(region_un === 'All'){
 		for(let i = 0; i < data.features.length; i++){
 			selected_countries.push(data.features[i].properties.statistics)
@@ -40,6 +39,13 @@ function find_domain(data){
 			}
 		}
 	}
+	return selected_countries;
+}
+
+function find_domain(data){
+	var selected_countries = line_select_country(data);
+	var target = 'Life_expectancy'
+
 	res = []
 	for(let i = 0; i < selected_countries.length; i++){
 		for(let j = 0; j < selected_countries[0].length; j++){
@@ -50,52 +56,27 @@ function find_domain(data){
 }
 
 function update_line(data, scales){
-	var region_un = d3.select('#select_cont').property('value');
-	var subregion = d3.select('#select_sub_cont').property('value')
-	var selected_countries = []
+	var selected_countries = line_select_country(data);
 	var target = 'Life expectancy'
-
-	if(region_un === 'All'){
-		for(let i = 0; i < data.features.length; i++){
-			selected_countries.push(data.features[i].properties.statistics)
-		}
-	}else if(subregion === 'All'){
-		for(let i = 0; i < data.features.length; i++){
-			if(data.features[i].properties.region_un === region_un){
-				selected_countries.push(data.features[i].properties.statistics)
-			}
-		}
-	}else{
-		for(let i = 0; i < data.features.length; i++){
-			if(data.features[i].properties.region_un === region_un && data.features[i].properties.subregion === subregion){
-				selected_countries.push(data.features[i].properties.statistics)
-			}
-		}
-	}
-
-	console.log(selected_countries)
 	
 	path_generator = d3.line()
-    .x(d => scales.x(d.Year))
-    .y(d => scales.y(d.Life_expectancy));
+    			.x(d => scales.x(d.Year))
+    			.y(d => scales.y(d.Life_expectancy));
 
-    d3.select('#series')
-    .selectAll('path')
-    .data(selected_countries)
-	.join(
-		enter => enter.append('path')
-				.transition().duration(1000).attrs({
-			d: path_generator,
-			stroke: '#a8a8a8',
-			'stroke-width': 1,
-			fill: 'none'
-		}),
-		update => update.transition().duration(1000).attr('d', path_generator),
-		exit => exit.transition().duration(200).remove(),
-
-		
-	)
-
+    	d3.select('#series')
+    		.selectAll('path')
+    		.data(selected_countries)
+		.join(
+			enter => enter.append('path')
+					.transition().duration(1000).attrs({
+					d: path_generator,
+					stroke: '#a8a8a8',
+					'stroke-width': 1,
+					fill: 'none'
+			}),
+			update => update.transition().duration(1000).attr('d', path_generator),
+			exit => exit.transition().duration(200).remove(),
+		);
 }
 
 function parse(data){
@@ -162,37 +143,18 @@ function merge_country(data) {
 
 
 function make_scales(data){
-	var region_un = d3.select('#select_cont').property('value');
-	var subregion = d3.select('#select_sub_cont').property('value')
 	var years = [2000, 2015]
 	var values = find_domain(data)
-	var selected_countries = []
-	if(region_un === 'All'){
-		for(let i = 0; i < data.features.length; i++){
-			selected_countries.push(data.features[i].properties.statistics)
-		}
-	}else if(subregion === 'All'){
-		for(let i = 0; i < data.features.length; i++){
-			if(data.features[i].properties.region_un === region_un){
-				selected_countries.push(data.features[i].properties.statistics)
-			}
-		}
-	}else{
-		for(let i = 0; i < data.features.length; i++){
-			if(data.features[i].properties.region_un === region_un && data.features[i].properties.subregion === subregion){
-				selected_countries.push(data.features[i].properties.statistics)
-			}
-		}
-	}
+	var selected_countries = line_select_country(data);
 
-    return{
-        x: d3.scaleTime()
-        .domain(years)
-        .range([margins.left, width - margins.right]),
-        y: d3.scaleLinear()
-        .domain(values)
-        .range([height - margins.bottom, margins.top])
-    }
+    	return{
+        	x: d3.scaleTime()
+        		.domain(years)
+        		.range([margins.left, width - margins.right]),
+        	y: d3.scaleLinear()
+        		.domain(values)
+        		.range([height - margins.bottom, margins.top])
+    	}
 
 }
 
@@ -260,6 +222,10 @@ function select_var(data) {
 				.attr("value", function(d){
 					return d;
 				})
+}
+
+function map_update_var(data, choice) {
+
 }
 
 function select_cont(data) {
@@ -335,11 +301,7 @@ function update_cont(select, data) {
 	}
 
 	
-	
 	var select = d3.select('#select_sub_cont')
-		//	.property("selected", function(d){
-		//		return d = "All";
-		//	})
 			.on('change', function(event, d) {
 				const selectedOption = d3.select(this).property("value");
 				update_sub_cont(selectedOption, data, selected);
@@ -423,54 +385,45 @@ function update_map(selected) {
 
 
 function draw_line(data, scales){
-	var region_un = d3.select('#select_cont').property('value');
-	var subregion = d3.select('#select_sub_cont').property('value')
-	var selected_countries = []
+	var selected_countries = line_select_country(data);
 	var target = 'Life expectancy'
-
-	if(region_un === 'All'){
-		for(let i = 0; i < data.features.length; i++){
-			selected_countries.push(data.features[i].properties.statistics)
-		}
-	}else if(subregion === 'All'){
-		for(let i = 0; i < data.features.length; i++){
-			if(data.features[i].properties.region_un === region_un){
-				selected_countries.push(data.features[i].properties.statistics)
-			}
-		}
-	}else{
-		for(let i = 0; i < data.features.length; i++){
-			if(data.features[i].properties.region_un === region_un && data.features[i].properties.subregion === subregion){
-				selected_countries.push(data.features[i].properties.statistics)
-			}
-		}
-	}
 	
 	path_generator = d3.line()
-    .x(d => scales.x(d.Year))
-    .y(d => scales.y(d.Life_expectancy));
+    			.x(d => scales.x(d.Year))
+    			.y(d => scales.y(d.Life_expectancy));
 
-    d3.select('#series')
-    .selectAll('path')
-    .data(selected_countries).enter()
-    .append('path')
-	.attrs({
-		d: path_generator,
-		stroke: '#a8a8a8',
-		'stroke-width': 1,
-		fill: 'none'
-	})
-
+    	d3.select('#series')
+    		.selectAll('path')
+    		.data(selected_countries).enter()
+    		.append('path')
+		.attrs({
+			d: path_generator,
+			stroke: '#a8a8a8',
+			'stroke-width': 1,
+			fill: 'none'
+		})
 }
-let scale = {
-	    fill: d3.scaleQuantize()
-		.domain([45, 80])
-		.range(d3.schemeBlues[9])
-};
+
+function map_scale() {
+	console.log(d3.select('#select_variable').property("value"))
+	if (d3.select('#select_variable').property("value") === "Life_expectancy") {
+		return {
+			fill: d3.scaleQuantize()
+			.domain([45, 80])
+			.range(d3.schemeBlues[9])
+		}
+	}
+}
 
 function draw_map(data) {
         let proj = d3.geoMercator().fitExtent([[0, 0],[width, height]], data);
         let path = d3.geoPath().projection(proj);
+
+	let scale = {
+		fill: d3.scaleQuantize()
+		.domain([45, 80])
+		.range(d3.schemeBlues[9])
+	};
 
         d3.select("#map")
                 .selectAll("path")
@@ -487,6 +440,5 @@ function draw_map(data) {
 
 Promise.all([
 	d3.json("world_map.json", d3.autoType),
-    	//d3.json("https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson"),
 	d3.csv("life_expectancy_data.csv", d3.autoType)
 ]).then(main)
