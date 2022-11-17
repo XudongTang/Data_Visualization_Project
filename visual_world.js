@@ -1,5 +1,5 @@
 let width = 900;
-let height = 600;
+let height = 500;
 let margins = {top: 20, bottom: 20, left: 20, right: 20}
 
 function main(data) {
@@ -11,7 +11,6 @@ function main(data) {
 	select_var(data);	
 	
 	
-	console.log(data)
 	scales = make_scales(data);
 	// draw_line(data, scales)
 	add_axes(scales)
@@ -41,9 +40,8 @@ function line_select_country(data) {
 	return selected_countries;
 }
 
-function find_domain(data){
+function find_domain(data, target){
 	var selected_countries = line_select_country(data);
-	var target = 'Life_expectancy'
 
 	res = []
 	for(let i = 0; i < selected_countries.length; i++){
@@ -51,16 +49,16 @@ function find_domain(data){
 			res.push(selected_countries[i][j][target])
 		}
 	}
-	return d3.extent(res)
+	return [d3.quantile(res, 0), d3.quantile(res, 1)]
 }
 
 function update_line(data, scales){
 	var selected_countries = line_select_country(data);
-	var target = 'Life expectancy'
+	var target = d3.select("#select_variable").property("value");
 	
 	path_generator = d3.line()
     			.x(d => scales.x(d.Year))
-    			.y(d => scales.y(d.Life_expectancy));
+    			.y(d => scales.y(d[target]));
 
     	d3.select('#series')
     		.selectAll('path')
@@ -69,7 +67,7 @@ function update_line(data, scales){
 			enter => enter.append('path')
 					.transition().duration(1000).attrs({
 					d: path_generator,
-					stroke: '#a8a8a8',
+					stroke: '#0c0c0c',
 					'stroke-width': 1,
 					fill: 'none'
 			}),
@@ -142,10 +140,11 @@ function merge_country(data) {
 
 
 function make_scales(data){
-	var years = [2000, 2015]
-	var values = find_domain(data)
+	var target = d3.select("#select_variable").property("value"); 
+	var values = find_domain(data, target)
 	var selected_countries = line_select_country(data);
-
+	var years = [2000, 2015]
+	console.log(values)
     	return{
         	x: d3.scaleTime()
         		.domain(years)
@@ -158,26 +157,26 @@ function make_scales(data){
 }
 
 function add_axes(scales){
-    let x_axis = d3.axisBottom()
-    .scale(scales.x),
-    y_axis = d3.axisLeft()
-    .scale(scales.y);
+    	let x_axis = d3.axisBottom()
+    			.scale(scales.x),
+    			y_axis = d3.axisLeft()
+    			.scale(scales.y);
 
-    d3.select('#axes')
-    .append('g')
-    .attrs({
-        id: 'x_axis',
-        transform: `translate(0, ${height - margins.bottom})`
-    })
-    .call(x_axis);
+    	d3.select('#axes')
+    		.append('g')
+    		.attrs({
+        	id: 'x_axis',
+        		transform: `translate(0, ${height - margins.bottom})`
+    		})
+    		.call(x_axis);
 
-    d3.select('#axes')
-    .append('g')
-    .attrs({
-        id: 'y_axis',
-        transform: `translate(${margins.left}, 0)`
-    })
-    .call(y_axis);
+    	d3.select('#axes')
+    		.append('g')
+    		.attrs({
+        		id: 'y_axis',
+        	transform: `translate(${margins.left}, 0)`
+    		})
+    		.call(y_axis);
 }
 
 function update_axes(scales){
@@ -212,6 +211,9 @@ function select_var(data) {
 			.on('change', function(event, d) {
 				const selectedOption = d3.select(this).property("value");
 				map_update_var(data, selectedOption);
+				scales = make_scales(data)
+				update_line(data, scales)
+				update_axes(scales)
 			});
 	var options = select.selectAll('option')
 				.data(choice).enter()
@@ -225,40 +227,36 @@ function select_var(data) {
 }
 
 function map_update_var(data, choice) {
+	var scale;
         
 	if (choice === "Life_expectancy") {
-		let scale = {
+		scale = {
 			fill: d3.scaleQuantize()
 			.domain([45, 80])
 			.range(d3.schemeBlues[9])
 		}
 	} else if (choice === "Adult_mortality") {
-		let scale = {
+		scale = {
 			fill: d3.scaleQuantize()
 			.domain([0, 500])
 			.range(d3.schemeReds[9])
 		}
 	} else {
-		let scale =  {
+		scale =  {
 			fill: d3.scaleQuantize()
-			.domain([0, 600])
+			.domain([0, 100])
 			.range(d3.schemeReds[9])
 		}
 	}
 
-	console.log(choice);
 
 	d3.select("#map")
                 .selectAll("path")
                 .data(data.features, d => d.properties.adm0_a3)
-		.join(
-			function (update) {
-				return update.transition().duration(500).attrs({
-					fill: d => scale.fill(d.properties.statistics[0][choice]),	
-					id: "changed"
-				})
-			}
-		);
+		.transition().duration(600)
+		.attrs({
+			fill: d => scale.fill(d.properties.statistics[14][choice])
+		})
 }
 
 function select_cont(data) {
@@ -419,11 +417,11 @@ function update_map(selected) {
 
 function draw_line(data, scales){
 	var selected_countries = line_select_country(data);
-	var target = 'Life expectancy'
+	var target = d3.select("#select_variable").property("value");
 	
 	path_generator = d3.line()
     			.x(d => scales.x(d.Year))
-    			.y(d => scales.y(d.Life_expectancy));
+    			.y(d => scales.y(d[target]));
 
     	d3.select('#series')
     		.selectAll('path')
@@ -431,7 +429,7 @@ function draw_line(data, scales){
     		.append('path')
 		.attrs({
 			d: path_generator,
-			stroke: '#a8a8a8',
+			stroke: '#0c0c0c',
 			'stroke-width': 1,
 			fill: 'none'
 		})
