@@ -6,74 +6,18 @@ function main(data) {
 	data[1] = parse(data[1]);
 	data = merge_country(data);
 
-	draw_map(data);
-	select_cont(data);
-	select_var(data);	
-	
-	
+	map_init(data);
+	button_continent(data);
+	button_variable(data);
+
+
 	scales = make_scales(data);
 	add_axes(scales)
 }
 
-function line_select_country(data) {
-	var selected_countries = [];
-	var region_un = d3.select('#select_cont').property('value');
-	var subregion = d3.select('#select_sub_cont').property('value')
-	if(region_un === 'All'){
-		for(let i = 0; i < data.features.length; i++){
-			selected_countries.push(data.features[i].properties.statistics)
-		}
-	}else if(subregion === 'All'){
-		for(let i = 0; i < data.features.length; i++){
-			if(data.features[i].properties.region_un === region_un){
-				selected_countries.push(data.features[i].properties.statistics)
-			}
-		}
-	}else{
-		for(let i = 0; i < data.features.length; i++){
-			if(data.features[i].properties.region_un === region_un && data.features[i].properties.subregion === subregion){
-				selected_countries.push(data.features[i].properties.statistics)
-			}
-		}
-	}
-	return selected_countries;
-}
-
-function find_domain(data, target){
-	var selected_countries = line_select_country(data);
-
-	res = []
-	for(let i = 0; i < selected_countries.length; i++){
-		for(let j = 0; j < selected_countries[0].length; j++){
-			res.push(selected_countries[i][j][target])
-		}
-	}
-	return [d3.quantile(res, 0), d3.quantile(res, 1)]
-}
-
-function update_line(data, scales){
-	var selected_countries = line_select_country(data);
-	var target = d3.select("#select_variable").property("value");
-	
-	path_generator = d3.line()
-    			.x(d => scales.x(d.Year))
-    			.y(d => scales.y(d[target]));
-
-    	d3.select('#series')
-    		.selectAll('path')
-    		.data(selected_countries)
-		.join(
-			enter => enter.append('path')
-					.transition().duration(1000).attrs({
-					d: path_generator,
-					stroke: '#0c0c0c',
-					'stroke-width': 1,
-					fill: 'none'
-			}),
-			update => update.transition().duration(1000).attr('d', path_generator),
-			exit => exit.transition().duration(200).remove(),
-		);
-}
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////// Data prepross function ////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 function parse(data){
 	const res = [];
@@ -107,20 +51,19 @@ function parse(data){
 	return res;
 }
 
-
-
 function merge_country(data) {
 	const all_country = [];
 	for (var i = 0; i < data[1].length; ++i) {
-		const found = data[0].features.find(d => d.properties.name_long === data[1][i][0].Country
+		const found = data[0].features.find(d =>
+			d.properties.name_long === data[1][i][0].Country
 			|| d.properties.admin === data[1][i][0].Country
 			|| d.properties.brk_name === data[1][i][0].Country
 			|| d.properties.formal_en === data[1][i][0].Country
 			|| d.properties.formal_en === data[1][i][0].Country
 		);
-		if (found !== undefined 
-		&& found.properties.adm0_a3 !== 'COK' 
-		&& found.properties.adm0_a3 !== 'DMA' 
+		if (found !== undefined
+		&& found.properties.adm0_a3 !== 'COK'
+		&& found.properties.adm0_a3 !== 'DMA'
 		&& found.properties.adm0_a3 !== 'MHL'
 		&& found.properties.adm0_a3 !== 'MCO'
 		&& found.properties.adm0_a3 !== 'NRU'
@@ -137,9 +80,49 @@ function merge_country(data) {
 	return data[0];
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////// Line function /////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+// Helpers
+function line_select_country(data) {
+	var selected_countries = [];
+	var region_un = d3.select('#select_cont').property('value');
+	var subregion = d3.select('#select_sub_cont').property('value')
+	if(region_un === 'All'){
+		for(let i = 0; i < data.features.length; i++){
+			selected_countries.push(data.features[i].properties.statistics)
+		}
+	}else if(subregion === 'All'){
+		for(let i = 0; i < data.features.length; i++){
+			if(data.features[i].properties.region_un === region_un){
+				selected_countries.push(data.features[i].properties.statistics)
+			}
+		}
+	}else{
+		for(let i = 0; i < data.features.length; i++){
+			if(data.features[i].properties.region_un === region_un
+				&& data.features[i].properties.subregion === subregion){
+				selected_countries.push(data.features[i].properties.statistics)
+			}
+		}
+	}
+	return selected_countries;
+}
+
+function find_domain(data, target){
+	var selected_countries = line_select_country(data);
+	res = []
+	for(let i = 0; i < selected_countries.length; i++){
+		for(let j = 0; j < selected_countries[0].length; j++){
+			res.push(selected_countries[i][j][target])
+		}
+	}
+	return [d3.quantile(res, 0), d3.quantile(res, 1)]
+}
 
 function make_scales(data){
-	var target = d3.select("#select_variable").property("value"); 
+	var target = d3.select("#select_variable").property("value");
 	var values = find_domain(data, target)
 	var selected_countries = line_select_country(data);
 	var years = d3.extent(selected_countries[0].map(d => d.Year))
@@ -153,6 +136,38 @@ function make_scales(data){
     	}
 
 }
+
+// Draw
+function update_line_on_click(data) {
+	scales = make_scales(data);
+	update_line(data, scales);
+	update_axes(scales);
+}
+
+function update_line(data, scales){
+	var selected_countries = line_select_country(data);
+	var target = d3.select("#select_variable").property("value");
+
+	path_generator = d3.line()
+    			.x(d => scales.x(d.Year))
+    			.y(d => scales.y(d[target]));
+
+    	d3.select('#series')
+    		.selectAll('path')
+    		.data(selected_countries)
+		.join(
+			enter => enter.append('path')
+					.transition().duration(1000).attrs({
+					d: path_generator,
+					stroke: '#0c0c0c',
+					'stroke-width': 1,
+					fill: 'none'
+			}),
+			update => update.transition().duration(1000).attr('d', path_generator),
+			exit => exit.transition().duration(200).remove(),
+		);
+}
+
 
 function add_axes(scales){
     	let x_axis = d3.axisBottom()
@@ -187,46 +202,29 @@ function update_axes(scales){
 	d3.select('#y_axis').remove()
 
 	d3.select('#axes')
-    		.append('g')
-    		.attrs({
-        		id: 'x_axis',
-        		transform: `translate(0, ${height - margins.bottom})`
-    		})
-    		.call(x_axis);
+    .append('g')
+    .attrs({
+      	id: 'x_axis',
+        transform: `translate(0, ${height - margins.bottom})`
+    })
+    .call(x_axis);
 
-    	d3.select('#axes')
-    		.append('g')
-    		.attrs({
-        		id: 'y_axis',
-        		transform: `translate(${margins.left}, 0)`
-    		})
-    		.call(y_axis);
+  d3.select('#axes')
+    .append('g')
+    .attrs({
+      	id: 'y_axis',
+        transform: `translate(${margins.left}, 0)`
+    })
+    .call(y_axis);
 }
 
-function select_var(data) {
-	var choice = ["Life_expectancy", "Adult_mortality", "Infant_death"];
-	var select = d3.select("#select_variable")
-			.on('change', function(event, d) {
-				const selectedOption = d3.select(this).property("value");
-				map_update_var(data, selectedOption);
-				scales = make_scales(data)
-				update_line(data, scales)
-				update_axes(scales)
-			});
-	var options = select.selectAll('option')
-				.data(choice).enter()
-				.append('option')
-				.text(function(d) {
-					return d;
-				})
-				.attr("value", function(d){
-					return d;
-				})
-}
+////////////////////////////////////////////////////////////////////////////////
+///////////////////////////// Map function /////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
-function map_update_var(data, choice) {
+function update_map_color(data, choice) {
 	var scale;
-        
+
 	if (choice === "Life_expectancy") {
 		scale = {
 			fill: d3.scaleQuantize()
@@ -247,27 +245,92 @@ function map_update_var(data, choice) {
 		}
 	}
 
-
 	d3.select("#map")
-                .selectAll("path")
-                .data(data.features, d => d.properties.adm0_a3)
+    .selectAll("path")
+    .data(data.features, d => d.properties.adm0_a3)
 		.transition().duration(600)
 		.attrs({
 			fill: d => scale.fill(d.properties.statistics[14][choice])
 		})
 }
 
-function select_cont(data) {
+function update_map_position(selected) {
+	let newproj = d3.geoMercator().fitExtent([[0, 0],[width, height]], selected);
+	let newpath = d3.geoPath().projection(newproj);
+	d3.select("#map")
+		.selectAll("path")
+		.data(selected.features, d => d.properties.adm0_a3)
+		.join(
 
+			function (exit) {
+				return exit.remove();
+			},
+			function (enter) {
+				return enter.transition().duration(1000).attrs({
+					d: newpath,
+				})
+			},
+			function (update) {
+				return update.transition().duration(1000).attrs({
+					d: newpath,
+				})
+			}
+		);
+}
+
+function map_init(data) {
+	let proj = d3.geoMercator().fitExtent([[0, 0],[width, height]], data);
+	let path = d3.geoPath().projection(proj);
+
+	let scale = {
+		fill: d3.scaleQuantize()
+		.domain([45, 80])
+		.range(d3.schemeBlues[9])
+	};
+
+	d3.select("#map")
+		.selectAll("path")
+		.data(data.features).enter()
+		.append("path")
+		.attrs({
+				d: path,
+				fill: d => scale.fill(d.properties.statistics[0]?.Life_expectancy),
+        "stroke-width": 1,
+				"stroke": "black",
+				name: d => d.properties.adm0_a3
+			});
+}
+
+////////////////////////////////////////////////////////////////////////////////
+///////////////////////////// Button function //////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+function button_variable(data) {
+	var choice = ["Life_expectancy", "Adult_mortality", "Infant_death"];
+	var select = d3.select("#select_variable")
+			.on('change', function(event, d) {
+				const selectedOption = d3.select(this).property("value");
+				update_map_color(data, selectedOption);
+				update_line_on_click(data);
+			});
+	var options = select.selectAll('option')
+				.data(choice).enter()
+				.append('option')
+				.text(function(d) {
+					return d;
+				})
+				.attr("value", function(d){
+					return d;
+				})
+}
+
+function button_continent(data) {
 	var choice = ["All", "Asia", "Europe", "Africa", "Americas", "Oceania"];
-	
 	var select = d3.select('#select_cont')
 			.on('change', function(event, d) {
 				const selectedOption = d3.select(this).property("value");
-				update_cont(selectedOption, data);
-				scales = make_scales(data)
-				update_line(data, scales)
-				update_axes(scales)
+				button_sub_continent(selectedOption, data);
+				update_line_on_click(data);
 			});
 	var options = select.selectAll('option')
 				.data(choice).enter()
@@ -278,16 +341,14 @@ function select_cont(data) {
 				.attr("value", function(d) {
 					return d;
 				});
-
-
 }
 
 
-function update_cont(select, data) {
+function button_sub_continent(select, data) {
 	const selected = structuredClone(data);
 	if (select !== "All") {
 		const countries = [];
-	
+
 		for (var i = 0; i < data.features.length; ++i) {
 			if (data.features[i].properties.adm0_a3 === "RUS" ||
 				data.features[i].properties.adm0_a3 === "NZL" ||
@@ -309,7 +370,7 @@ function update_cont(select, data) {
 		}
 		selected.features = countries;
 	}
-	update_map(selected);	
+	update_map_position(selected);
 	d3.select('#select_sub_cont').property("value", "All");
 	var sub_count = [];
 
@@ -319,7 +380,7 @@ function update_cont(select, data) {
 	} else if (select === "Europe") {
 		sub_count = ["All", "Southern Europe", "Western Europe", "Eastern Europe", "Northern Europe"];
 	} else if (select === "Africa") {
-		sub_count = ["All", "Northern Africa", "Middle Africa", "Western Africa", 
+		sub_count = ["All", "Northern Africa", "Middle Africa", "Western Africa",
 			"Southern Africa", "Eastern Africa"];
 	} else if (select === "Americas") {
 		sub_count = ["All", "Caribbean", "South America", "Central America", "Northern America"];
@@ -329,14 +390,11 @@ function update_cont(select, data) {
 		sub_count = ["All"];
 	}
 
-	
 	var select = d3.select('#select_sub_cont')
 			.on('change', function(event, d) {
 				const selectedOption = d3.select(this).property("value");
 				update_sub_cont(selectedOption, data, selected);
-				scales = make_scales(data)
-				update_line(data, scales)
-				update_axes(scales)
+				update_line_on_click(data);
 			});
 
 	var options = select.selectAll('option')
@@ -352,15 +410,13 @@ function update_cont(select, data) {
 		});
 }
 
-
 function update_sub_cont(select, data, prevSelect) {
 	var selected = structuredClone(data);
 	if (select !== "All") {
 		const countries = [];
-	
 		for (var i = 0; i < data.features.length; ++i) {
 			if (data.features[i].properties.adm0_a3 === "RUS" ||
-				data.features[i].properties.adm0_a3 === "NZL"||	
+				data.features[i].properties.adm0_a3 === "NZL"||
 				data.features[i].properties.adm0_a3 === "FJI"||
 				data.features[i].properties.adm0_a3 === "KIR"||
 				data.features[i].properties.adm0_a3 === "ESP"||
@@ -380,81 +436,8 @@ function update_sub_cont(select, data, prevSelect) {
 	} else {
 		selected = prevSelect;
 	}
-	update_map(selected);
-	
-}
+	update_map_position(selected);
 
-function update_map(selected) {
-
-        let newproj = d3.geoMercator().fitExtent([[0, 0],[width, height]], selected);
-        let newpath = d3.geoPath().projection(newproj);
-	d3.select("#map")
-		.selectAll("path")
-		.data(selected.features, d => d.properties.adm0_a3)
-		.join(
-		
-			function (exit) {
-				return exit.remove();
-			},
-			function (enter) {
-				return enter.transition().duration(1000).attrs({
-					d: newpath,
-				})
-			},
-			function (update) {
-				return update.transition().duration(1000).attrs({
-					d: newpath,
-				})
-			}
-
-
-		);
-}
-
-
-
-function draw_line(data, scales){
-	var selected_countries = line_select_country(data);
-	var target = d3.select("#select_variable").property("value");
-	
-	path_generator = d3.line()
-    			.x(d => scales.x(d.Year))
-    			.y(d => scales.y(d[target]));
-
-    	d3.select('#series')
-    		.selectAll('path')
-    		.data(selected_countries).enter()
-    		.append('path')
-		.attrs({
-			d: path_generator,
-			stroke: '#0c0c0c',
-			'stroke-width': 1,
-			fill: 'none'
-		})
-}
-
-
-function draw_map(data) {
-        let proj = d3.geoMercator().fitExtent([[0, 0],[width, height]], data);
-        let path = d3.geoPath().projection(proj);
-
-	let scale = {
-		fill: d3.scaleQuantize()
-		.domain([45, 80])
-		.range(d3.schemeBlues[9])
-	};
-
-        d3.select("#map")
-                .selectAll("path")
-                .data(data.features).enter()
-                .append("path")
-                .attrs({
-                        d: path,
-			fill: d => scale.fill(d.properties.statistics[0]?.Life_expectancy),
-            		"stroke-width": 1,
-			"stroke": "black",
-			name: d => d.properties.adm0_a3
-                });
 }
 
 Promise.all([
