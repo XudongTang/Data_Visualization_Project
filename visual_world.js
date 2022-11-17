@@ -1,6 +1,6 @@
 let width = 900;
 let height = 500;
-let margins = {top: 20, bottom: 20, left: 20, right: 20}
+let margins = {top: 50, bottom: 50, left: 50, right: 50}
 
 function main(data) {
 	data[1] = parse(data[1]);
@@ -12,7 +12,6 @@ function main(data) {
 	
 	
 	scales = make_scales(data);
-	// draw_line(data, scales)
 	add_axes(scales)
 }
 
