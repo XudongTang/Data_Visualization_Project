@@ -80,7 +80,7 @@ function parse(data){
 	var res2 = [];
 	cur_country = data[0].Country;
 	for(let i = 0; i < data.length; i++){
-		data[i].Year = (new Date(data[i].Year + '-01-03')).getFullYear();
+		data[i].Year = (new Date(data[i].Year + '-01-03'));
 		if(data[i].Country === cur_country){
 			var element = [];
 			element.Year = data[i].Year;
@@ -142,9 +142,8 @@ function make_scales(data){
 	var target = d3.select("#select_variable").property("value"); 
 	var values = find_domain(data, target)
 	var selected_countries = line_select_country(data);
-	var years = [2000, 2015]
-	console.log(values)
-    	return{
+	var years = d3.extent(selected_countries[0].map(d => d.Year))
+	return{
         	x: d3.scaleTime()
         		.domain(years)
         		.range([margins.left, width - margins.right]),

@@ -5,6 +5,10 @@
 	stroke:#0c0c0c;
 }
 
+button {
+	width: 120px;
+	height: 50px;
+}
 select {
 	width: 120px;
 	height: 50px;
