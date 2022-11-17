@@ -6,13 +6,12 @@ function main(data) {
 	data[1] = parse(data[1]);
 	data = merge_country(data);
 
-	map_scale = map_scale();
-	draw_map(data, map_scale);
+	draw_map(data);
 	select_cont(data);
 	select_var(data);	
 	
 	
-	//console.log(data)
+	console.log(data)
 	scales = make_scales(data);
 	// draw_line(data, scales)
 	add_axes(scales)
@@ -183,35 +182,36 @@ function add_axes(scales){
 
 function update_axes(scales){
 	let x_axis = d3.axisBottom()
-    .scale(scales.x),
-    y_axis = d3.axisLeft()
-    .scale(scales.y);
+    			.scale(scales.x),
+    	y_axis = d3.axisLeft()
+    			.scale(scales.y);
 
 	d3.select('#x_axis').remove()
 	d3.select('#y_axis').remove()
 
 	d3.select('#axes')
-    .append('g')
-    .attrs({
-        id: 'x_axis',
-        transform: `translate(0, ${height - margins.bottom})`
-    })
-    .call(x_axis);
+    		.append('g')
+    		.attrs({
+        		id: 'x_axis',
+        		transform: `translate(0, ${height - margins.bottom})`
+    		})
+    		.call(x_axis);
 
-    d3.select('#axes')
-    .append('g')
-    .attrs({
-        id: 'y_axis',
-        transform: `translate(${margins.left}, 0)`
-    })
-    .call(y_axis);
+    	d3.select('#axes')
+    		.append('g')
+    		.attrs({
+        		id: 'y_axis',
+        		transform: `translate(${margins.left}, 0)`
+    		})
+    		.call(y_axis);
 }
 
 function select_var(data) {
-	var choice = ["Life_expectancy", "Adult_mortality", "Infant_death", "Status"];
+	var choice = ["Life_expectancy", "Adult_mortality", "Infant_death"];
 	var select = d3.select("#select_variable")
 			.on('change', function(event, d) {
-				
+				const selectedOption = d3.select(this).property("value");
+				map_update_var(data, selectedOption);
 			});
 	var options = select.selectAll('option')
 				.data(choice).enter()
@@ -225,7 +225,40 @@ function select_var(data) {
 }
 
 function map_update_var(data, choice) {
+        
+	if (choice === "Life_expectancy") {
+		let scale = {
+			fill: d3.scaleQuantize()
+			.domain([45, 80])
+			.range(d3.schemeBlues[9])
+		}
+	} else if (choice === "Adult_mortality") {
+		let scale = {
+			fill: d3.scaleQuantize()
+			.domain([0, 500])
+			.range(d3.schemeReds[9])
+		}
+	} else {
+		let scale =  {
+			fill: d3.scaleQuantize()
+			.domain([0, 600])
+			.range(d3.schemeReds[9])
+		}
+	}
 
+	console.log(choice);
+
+	d3.select("#map")
+                .selectAll("path")
+                .data(data.features, d => d.properties.adm0_a3)
+		.join(
+			function (update) {
+				return update.transition().duration(500).attrs({
+					fill: d => scale.fill(d.properties.statistics[0][choice]),	
+					id: "changed"
+				})
+			}
+		);
 }
 
 function select_cont(data) {
@@ -404,16 +437,6 @@ function draw_line(data, scales){
 		})
 }
 
-function map_scale() {
-	console.log(d3.select('#select_variable').property("value"))
-	if (d3.select('#select_variable').property("value") === "Life_expectancy") {
-		return {
-			fill: d3.scaleQuantize()
-			.domain([45, 80])
-			.range(d3.schemeBlues[9])
-		}
-	}
-}
 
 function draw_map(data) {
         let proj = d3.geoMercator().fitExtent([[0, 0],[width, height]], data);
