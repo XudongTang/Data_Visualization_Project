@@ -6,12 +6,14 @@ function main(data) {
 	data[1] = parse(data[1]);
 	data = merge_country(data);
 
+	console.log(data)
 	map_init(data);
 	button_continent(data);
 	button_variable(data);
 	button_year(data)
 	scales = make_scales(data);
 	add_axes(scales)
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -25,24 +27,10 @@ function parse(data){
 	for(let i = 0; i < data.length; i++){
 		data[i].Year = (new Date(data[i].Year + '-01-03'));
 		if(data[i].Country === cur_country){
-			var element = [];
-			element.Year = data[i].Year;
-			element.Country = data[i].Country;
-			element.Status = data[i].Status;
-			element.Life_expectancy = data[i]["Life expectancy "];
-			element.Adult_mortality = data[i]["Adult Mortality"];
-			element.Infant_death = data[i]["infant deaths"];
-			res2.splice(0, 0, element);
+			res2.push(data[i]);
 		}else{
 			res.push(res2);
-			var element = [];
-			element.Year = data[i].Year;
-			element.Country = data[i].Country;
-			element.Status = data[i].Status;
-			element.Life_expectancy = data[i]["Life expectancy "];
-			element.Adult_mortality = data[i]["Adult Mortality"];
-			element.Infant_death = data[i]["infant deaths"];
-			res2 = [element];
+			res2 = [data[i]];
 			cur_country = data[i].Country;
 		}
 	}
@@ -52,25 +40,11 @@ function parse(data){
 
 function merge_country(data) {
 	const all_country = [];
+
 	for (var i = 0; i < data[1].length; ++i) {
 		const found = data[0].features.find(d =>
-			d.properties.name_long === data[1][i][0].Country
-			|| d.properties.admin === data[1][i][0].Country
-			|| d.properties.brk_name === data[1][i][0].Country
-			|| d.properties.formal_en === data[1][i][0].Country
-			|| d.properties.formal_en === data[1][i][0].Country
-		);
-		if (found !== undefined
-		&& found.properties.adm0_a3 !== 'COK'
-		&& found.properties.adm0_a3 !== 'DMA'
-		&& found.properties.adm0_a3 !== 'MHL'
-		&& found.properties.adm0_a3 !== 'MCO'
-		&& found.properties.adm0_a3 !== 'NRU'
-		&& found.properties.adm0_a3 !== 'NIU'
-		&& found.properties.adm0_a3 !== 'PLW'
-		&& found.properties.adm0_a3 !== 'KNA'
-		&& found.properties.adm0_a3 !== 'SMR'
-		&& found.properties.adm0_a3 !== 'TUV') {
+			d.properties.adm0_a3 === data[1][i][0].ISO_code);
+		if (found !== undefined) {
 			found.properties.statistics = data[1][i]
 			all_country.push(found);
 		}
@@ -229,20 +203,26 @@ function update_map_color(data) {
 	if (choice === "Life_expectancy") {
 		scale = {
 			fill: d3.scaleQuantize()
-			.domain([45, 80])
-			.range(d3.schemeBlues[9])
+			.domain([38, 84])
+			.range(d3.schemeRdYlBu[11])
 		}
 	} else if (choice === "Adult_mortality") {
 		scale = {
 			fill: d3.scaleQuantize()
-			.domain([0, 500])
+			.domain([2, 200])
 			.range(d3.schemeReds[9])
+		}
+	} else if (choice === "Birth_rate") {
+		scale = {
+			fill: d3.scaleQuantize()
+			.domain([7, 54])
+			.range(d3.schemeYlGn[9])
 		}
 	} else {
 		scale =  {
 			fill: d3.scaleQuantize()
-			.domain([0, 100])
-			.range(d3.schemeReds[9])
+			.domain([1.5, 100])
+			.range(d3.schemeOranges[9])
 		}
 	}
 
@@ -285,8 +265,8 @@ function map_init(data) {
 
 	let scale = {
 		fill: d3.scaleQuantize()
-		.domain([45, 80])
-		.range(d3.schemeBlues[9])
+		.domain([38, 84])
+		.range(d3.schemeRdBu[11])
 	};
 
 	d3.select("#map")
@@ -334,7 +314,8 @@ function change_year(next_year) {
 }
 
 function button_variable(data) {
-	var choice = ["Life_expectancy", "Adult_mortality", "Infant_death"];
+	var choice = ["Life_expectancy", "Adult_mortality",
+							"Infant_death", "Birth_rate"];
 	var select = d3.select("#select_variable")
 			.on('change', function(event, d) {
 				update_map_color(data);
@@ -386,6 +367,7 @@ function button_sub_continent(select, data) {
 				data.features[i].properties.adm0_a3 === "FRA"||
 				data.features[i].properties.adm0_a3 === "NLD"||
 				data.features[i].properties.adm0_a3 === "NOR"||
+				data.features[i].properties.adm0_a3 === "TUV"||
 				data.features[i].properties.adm0_a3 === "USA"
 			) {
 				continue;
@@ -449,6 +431,7 @@ function update_sub_cont(select, data, prevSelect) {
 				data.features[i].properties.adm0_a3 === "KIR"||
 				data.features[i].properties.adm0_a3 === "ESP"||
 				data.features[i].properties.adm0_a3 === "PRT"||
+				data.features[i].properties.adm0_a3 === "TUV"||
 				data.features[i].properties.adm0_a3 === "FRA"||
 				data.features[i].properties.adm0_a3 === "NLD"||
 				data.features[i].properties.adm0_a3 === "NOR"||
