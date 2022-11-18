@@ -9,8 +9,7 @@ function main(data) {
 	map_init(data);
 	button_continent(data);
 	button_variable(data);
-
-
+	button_year(data)
 	scales = make_scales(data);
 	add_axes(scales)
 }
@@ -222,7 +221,9 @@ function update_axes(scales){
 ///////////////////////////// Map function /////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-function update_map_color(data, choice) {
+function update_map_color(data) {
+	const choice = d3.select("#select_variable").property("value");
+	const year = d3.select('#forward_button').property("value");
 	var scale;
 
 	if (choice === "Life_expectancy") {
@@ -250,7 +251,7 @@ function update_map_color(data, choice) {
     .data(data.features, d => d.properties.adm0_a3)
 		.transition().duration(600)
 		.attrs({
-			fill: d => scale.fill(d.properties.statistics[14][choice])
+			fill: d => scale.fill(d.properties.statistics[Number(year)-2000][choice])
 		})
 }
 
@@ -305,12 +306,38 @@ function map_init(data) {
 ///////////////////////////// Button function //////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+function button_year(data) {
+	var forwardButton = d3.select("#forward_button")
+			.attr("value", 2000)
+			.on('click', function(event, d){
+				const next_year = Number(d3.select(this).property("value")) + 1;
+				if (next_year <= 2015) {
+					change_year(next_year);
+					update_map_color(data);
+				}
+			});
+	var backwardButton = d3.select("#backward_button")
+			.attr("value", 2000)
+			.on('click', function(event, d){
+				const next_year = Number(d3.select(this).property("value")) - 1;
+				if (next_year >= 2000) {
+					change_year(next_year);
+					update_map_color(data);
+				}
+			});
+}
+
+function change_year(next_year) {
+	d3.select('#forward_button').property("value", next_year);
+	d3.select('#backward_button').property("value", next_year);
+	d3.select('#year').text(next_year);
+}
+
 function button_variable(data) {
 	var choice = ["Life_expectancy", "Adult_mortality", "Infant_death"];
 	var select = d3.select("#select_variable")
 			.on('change', function(event, d) {
-				const selectedOption = d3.select(this).property("value");
-				update_map_color(data, selectedOption);
+				update_map_color(data);
 				update_line_on_click(data);
 			});
 	var options = select.selectAll('option')
@@ -342,7 +369,6 @@ function button_continent(data) {
 					return d;
 				});
 }
-
 
 function button_sub_continent(select, data) {
 	const selected = structuredClone(data);
@@ -378,12 +404,14 @@ function button_sub_continent(select, data) {
 		sub_count = ["All", "Southern Asia", "Western Asia", "South-Eastern Asia",
 			"Eastern Asia", "Central Asia"];
 	} else if (select === "Europe") {
-		sub_count = ["All", "Southern Europe", "Western Europe", "Eastern Europe", "Northern Europe"];
+		sub_count = ["All", "Southern Europe", "Western Europe", "Eastern Europe"
+			, "Northern Europe"];
 	} else if (select === "Africa") {
 		sub_count = ["All", "Northern Africa", "Middle Africa", "Western Africa",
 			"Southern Africa", "Eastern Africa"];
 	} else if (select === "Americas") {
-		sub_count = ["All", "Caribbean", "South America", "Central America", "Northern America"];
+		sub_count = ["All", "Caribbean", "South America", "Central America"
+			, "Northern America"];
 	} else if (select === "Oceania") {
 		sub_count = ["All", "Australia and New Zealand", "Melanesia", "Micronesia"];
 	} else {
