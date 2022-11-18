@@ -1,0 +1,224 @@
+---
+title: "ggplot"
+author: "Jiacheng"
+date: "2022-11-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(knitr)
+library(tidyverse)
+library(tsibble)
+library(lubridate)
+#library(sf)
+library(tmap)
+library(terra)
+library(ceramic)
+library(tsibble)
+library(tsibbledata)
+library(ggHoriPlot)
+library(ggstream)
+library(colorspace)
+library(ggalluvial)
+library(scales)
+```
+
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+th <- theme_minimal() + 
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "#f7f7f7"),
+    panel.border = element_rect(fill = NA, color = "#0c0c0c", size = 0.6),
+    axis.text = element_text(size = 14),
+    axis.title = element_text(size = 16),
+    legend.position = "bottom"
+  )
+theme_set(th)
+```
+
+```{r}
+life<-read.csv("/Users/yujiacheng/Desktop/Data_Visualization_Project/life_expectancy_data.csv")
+colnames(life)[colnames(life)=="Life.expectancy"] <- "life_expectancy"
+colnames(life)[colnames(life)=="Adult.Mortality"] <- "adult_mortality"
+colnames(life)[colnames(life)=="infant.deaths"] <- "infant_deaths"
+life
+```
+
+```{r}
+cutpoints <- seq(35, 90, by = 5)
+subset_country <- c("United States",
+                    "China",
+                    "Australia",
+                    "Brazil",
+                    "Canada",
+                    "South Sudan",
+                    "France",
+                    "Germany",
+                    "India",
+                    "Iran",
+                    "Mexico",
+                    "New Zealand",
+                    "Norway",
+                    "Russian Federation",
+                    "Chad",
+                    "Ethiopia")
+life %>%
+  filter(Country %in% subset_country) %>%
+  ggplot() +
+  geom_horizon(aes(Year,life_expectancy, fill = ..Cutpoints..), origin = 47.6,horizonscale = cutpoints) +
+  scale_fill_hcl(palette = 'RdBu') +
+  facet_grid(reorder(Country, -life_expectancy) ~ .) +
+  theme(
+    strip.text.y = element_text(angle = 0),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank()
+  )
+```
+
+```{r}
+continent= read.csv("/Users/yujiacheng/Desktop/Data_Visualization_Project/Continents.csv")
+life=merge(continent,life)
+#life
+subset_country <- c("United States",
+                    "China",
+                    "Australia",
+                    "Brazil",
+                    "Canada",
+                    "South Sudan",
+                    "France",
+                    "Germany",
+                    "India",
+                    "Iran",
+                    "Mexico",
+                    "New Zealand",
+                    "Norway",
+                    "Russian Federation",
+                    "Chad",
+                    "Ethiopia")
+life %>%
+  filter(Country %in% subset_country) %>%
+  ggplot() +
+  geom_line(aes(Year,life_expectancy,color=Continent)) +
+  facet_wrap(~ reorder(Country, -life_expectancy))+
+  labs(color="Continent")+
+  theme_minimal()
+```
+```{r}
+life$category <-cut(life$life_expectancy,breaks=c(-Inf,60,75,Inf),labels=c("45-60","61-75","76-90"))
+#life
+subset_country <- c("United States",
+                    "China",
+                    "Australia",
+                    "Brazil",
+                    "Canada",
+                    "South Sudan",
+                    "France",
+                    "Germany",
+                    "India",
+                    "Iran",
+                    "Mexico",
+                    "New Zealand",
+                    "Norway",
+                    "Russian Federation",
+                    "Chad",
+                    "Ethiopia")
+life %>%
+  filter(Country %in% subset_country) %>%
+  ggplot() +
+  geom_tile(aes (Year, category, fill = life_expectancy))+
+  scale_x_continuous (expand = c(0, 0))+
+  scale_fill_distiller (direction = 1) +
+  facet_grid(Country ~ .)+
+  theme(strip.text.y = element_text (angle = 0))
+```
+
+
+```{r}
+life %>%
+  filter(Country %in% subset_country) %>%
+  ggplot() +
+  geom_tile(aes(Year, reorder(Country, life_expectancy), fill = life_expectancy, col = life_expectancy)) +
+  scale_fill_distiller(direction = 1) +
+  scale_x_continuous(expand = c(0, 0))+
+  #scale_x_yearquarter(expand = c(0, 0)) +
+  scale_y_discrete(expand = c(0, 0)) +
+  scale_color_distiller(direction = 1)
+```
+```{r}
+life %>%
+  filter(Country %in% subset_country)%>%
+  ggplot()+
+  geom_line(aes(x=Year, y=life_expectancy, color=Country))+
+  scale_y_continuous(expand = c(0, 0))+
+  scale_x_discrete(expand = c(0, 0)) +
+  theme(legend.position="bottom")
+```
+
+```{r}
+life %>%
+  filter(Country %in% subset_country)%>%
+  ggplot()+
+  geom_alluvium(aes(Year, life_expectancy, fill = Country, alluvium = Country), decreasing = FALSE, alpha = 0.9) +
+  theme(legend.position = "bottom")
+```
+```{r}
+continent= read.csv("/Users/yujiacheng/Desktop/Data_Visualization_Project/Continents.csv")
+life=merge(continent,life)
+#life
+subset_country <- c("United States",
+                    "China",
+                    "Australia",
+                    "Brazil",
+                    "Canada",
+                    "South Sudan",
+                    "France",
+                    "Germany",
+                    "India",
+                    "Iran",
+                    "Mexico",
+                    "New Zealand",
+                    "Norway",
+                    "Russian Federation",
+                    "Chad",
+                    "Ethiopia")
+life %>%
+  filter(Country %in% subset_country) %>%
+  ggplot() +
+  geom_stream(aes(Year, life_expectancy, fill = Country), bw = 1) +
+  facet_wrap(~ Continent, scale = "free_y")
+```
+```{r}
+continent= read.csv("/Users/yujiacheng/Desktop/Data_Visualization_Project/Continents.csv")
+life=merge(continent,life)
+#life
+subset_country <- c("United States",
+                    "China",
+                    "Australia",
+                    "Brazil",
+                    "Canada",
+                    "South Sudan",
+                    "France",
+                    "Germany",
+                    "India",
+                    "Iran",
+                    "Mexico",
+                    "New Zealand",
+                    "Norway",
+                    "Russian Federation",
+                    "Chad",
+                    "Ethiopia")
+life %>%
+  filter(Country %in% subset_country) %>%
+  ggplot() +
+  geom_alluvium(aes(Year,  life_expectancy, fill = Country, alluvium = Country), decreasing = FALSE, alpha = 0.9) +
+  facet_wrap(~ Continent, scale = "free_y") +
+  scale_y_continuous(labels = label_number(scale_cut = cut_long_scale()))
+```
+
+
+
