@@ -51,6 +51,38 @@ function merge_country(data) {
 	return data[0];
 }
 
+function scale_color() {
+	const choice = d3.select("#select_variable").property("value");
+	var scale;
+
+	if (choice === "Life_expectancy") {
+		scale = {
+			fill: d3.scaleQuantize()
+			.domain([38, 84])
+			.range(d3.schemeRdYlBu[11])
+		}
+	} else if (choice === "Adult_mortality") {
+		scale = {
+			fill: d3.scaleQuantize()
+			.domain([2, 200])
+			.range(d3.schemeReds[9])
+		}
+	} else if (choice === "Birth_rate") {
+		scale = {
+			fill: d3.scaleQuantize()
+			.domain([7, 54])
+			.range(d3.schemeYlGn[9])
+		}
+	} else {
+		scale =  {
+			fill: d3.scaleQuantize()
+			.domain([1.5, 100])
+			.range(d3.schemeOranges[9])
+		}
+	}
+	return scale;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////// Line function /////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -132,7 +164,7 @@ function update_line_on_click(data) {
 }
 
 function update_line(selected_countries, scales){
-	console.log(selected_countries)
+	color = scale_color();
 	path_generator = d3.line()
     			.x(d => scales.x(d.year))
     			.y(d => scales.y(d.data));
@@ -177,7 +209,12 @@ function update_line(selected_countries, scales){
 													},
 													"cy": function(d, i) {
 														return scales.y(d.data);
-													}
+													},
+													"fill": function (d, i) {
+														return color.fill(d.data)
+													},
+													"stoke-width": 1,
+													"stroke": "black"
 												}),
 				update => update.selectAll("circle")
 												.data(function(d){
@@ -192,7 +229,12 @@ function update_line(selected_countries, scales){
 																					},
 																					"cy": function(d, i) {
 																						return scales.y(d.data);
-																					}
+																					},
+																					"fill": function (d, i) {
+																						return color.fill(d.data)
+																					},
+																					"stoke-width": 1,
+																					"stroke": "black"
 																				}),
 													update => update.transition().duration(1000)
 																					.attrs({
@@ -201,11 +243,16 @@ function update_line(selected_countries, scales){
 																						},
 																						"cy": function(d, i) {
 																							return scales.y(d.data);
+																						},
+																						"fill": function (d, i) {
+																							return color.fill(d.data)
 																						}
 																					}),
-													exit => exit.transition().remove()
+													exit => exit.transition().duration(1000).remove()
 												),
-				remove => remove.transition().remove()
+				exit => exit.selectAll("circle").data(function(d){
+					return d.Data
+				}).transition().duration(1000).remove()
 			)
 }
 
@@ -274,31 +321,7 @@ function update_map_color(data) {
 	const year = d3.select('#forward_button').property("value");
 	var scale;
 
-	if (choice === "Life_expectancy") {
-		scale = {
-			fill: d3.scaleQuantize()
-			.domain([38, 84])
-			.range(d3.schemeRdYlBu[11])
-		}
-	} else if (choice === "Adult_mortality") {
-		scale = {
-			fill: d3.scaleQuantize()
-			.domain([2, 200])
-			.range(d3.schemeReds[9])
-		}
-	} else if (choice === "Birth_rate") {
-		scale = {
-			fill: d3.scaleQuantize()
-			.domain([7, 54])
-			.range(d3.schemeYlGn[9])
-		}
-	} else {
-		scale =  {
-			fill: d3.scaleQuantize()
-			.domain([1.5, 100])
-			.range(d3.schemeOranges[9])
-		}
-	}
+	scale = scale_color();
 
 	d3.select("#map")
     .selectAll("path")
