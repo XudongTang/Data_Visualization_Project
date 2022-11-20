@@ -5,8 +5,6 @@ let margins = {top: 50, bottom: 50, left: 50, right: 50}
 function main(data) {
 	data[1] = parse(data[1]);
 	data = merge_country(data);
-
-	console.log(data)
 	map_init(data);
 	button_continent(data);
 	button_variable(data);
@@ -25,7 +23,7 @@ function parse(data){
 	var res2 = [];
 	cur_country = data[0].Country;
 	for(let i = 0; i < data.length; i++){
-		data[i].Year = (new Date(data[i].Year + '-01-03'));
+		//data[i].Year = (new Date(data[i].Year + '-01-03'));
 		if(data[i].Country === cur_country){
 			res2.push(data[i]);
 		}else{
@@ -58,49 +56,64 @@ function merge_country(data) {
 ////////////////////////////////////////////////////////////////////////////////
 
 // Helpers
+
+function get_countries(data, year, target, i) {
+	var country = {Name: null, Data: []};
+	country.Name = data.features[i].properties.statistics[0].Country;
+	var tmp = [];
+	for (let j = 0; j <= Number(year)-2000; j++) {
+		var obj = {year: 0, data: 0};
+		obj.year = data.features[i].properties.statistics[j].Year;
+		obj.data = data.features[i].properties.statistics[j][target];
+		tmp.push(obj);
+	}
+	country.Data = tmp;
+	return country;
+}
+
 function line_select_country(data) {
 	var selected_countries = [];
 	var region_un = d3.select('#select_cont').property('value');
 	var subregion = d3.select('#select_sub_cont').property('value')
+	var year = d3.select("#forward_button").property('value');
+	var target = d3.select("#select_variable").property("value");
+
 	if(region_un === 'All'){
 		for(let i = 0; i < data.features.length; i++){
-			selected_countries.push(data.features[i].properties.statistics)
+			selected_countries.push(get_countries(data, year, target, i));
 		}
 	}else if(subregion === 'All'){
 		for(let i = 0; i < data.features.length; i++){
 			if(data.features[i].properties.region_un === region_un){
-				selected_countries.push(data.features[i].properties.statistics)
+				selected_countries.push(get_countries(data, year, target, i));
 			}
 		}
 	}else{
 		for(let i = 0; i < data.features.length; i++){
 			if(data.features[i].properties.region_un === region_un
 				&& data.features[i].properties.subregion === subregion){
-				selected_countries.push(data.features[i].properties.statistics)
+					selected_countries.push(get_countries(data, year, target, i));
 			}
 		}
 	}
 	return selected_countries;
 }
 
-function find_domain(data, target){
-	var selected_countries = line_select_country(data);
+function find_domain(selected_countries){
 	res = []
 	for(let i = 0; i < selected_countries.length; i++){
-		for(let j = 0; j < selected_countries[0].length; j++){
-			res.push(selected_countries[i][j][target])
+		for(let j = 0; j < selected_countries[i].Data.length; j++){
+			res.push(selected_countries[i].Data[j].data)
 		}
 	}
 	return [d3.quantile(res, 0), d3.quantile(res, 1)]
 }
 
-function make_scales(data){
-	var target = d3.select("#select_variable").property("value");
-	var values = find_domain(data, target)
-	var selected_countries = line_select_country(data);
-	var years = d3.extent(selected_countries[0].map(d => d.Year))
+function make_scales(selected_countries){
+	var values = find_domain(selected_countries)
+	var years = [2000, Number(d3.select("#forward_button").property('value'))];
 	return{
-        	x: d3.scaleTime()
+        	x: d3.scaleLinear()
         		.domain(years)
         		.range([margins.left, width - margins.right]),
         	y: d3.scaleLinear()
@@ -112,41 +125,98 @@ function make_scales(data){
 
 // Draw
 function update_line_on_click(data) {
-	scales = make_scales(data);
-	update_line(data, scales);
+	var selected_countries = line_select_country(data);
+	scales = make_scales(selected_countries);
+	update_line(selected_countries, scales);
 	update_axes(scales);
 }
 
-function update_line(data, scales){
-	var selected_countries = line_select_country(data);
-	var target = d3.select("#select_variable").property("value");
-
+function update_line(selected_countries, scales){
+	console.log(selected_countries)
 	path_generator = d3.line()
-    			.x(d => scales.x(d.Year))
-    			.y(d => scales.y(d[target]));
+    			.x(d => scales.x(d.year))
+    			.y(d => scales.y(d.data));
 
-    	d3.select('#series')
-    		.selectAll('path')
-    		.data(selected_countries)
-		.join(
-			enter => enter.append('path')
+
+    d3.select('#series')
+    	.selectAll('path')
+    	.data(selected_countries)
+			.join(
+				enter => enter.append('path')
 					.transition().duration(1000).attrs({
-					d: path_generator,
+					d: function(d) {
+							return path_generator(d.Data)
+						},
 					stroke: '#0c0c0c',
-					'stroke-width': 1,
+					'stroke-width': 2,
 					fill: 'none'
-			}),
-			update => update.transition().duration(1000).attr('d', path_generator),
-			exit => exit.transition().duration(200).remove(),
-		);
-}
+				}),
+				update => update.transition()
+												.duration(1000)
+												.attr("d", function(d) {
+													return path_generator(d.Data)
+												}),
+				exit => exit.transition().duration(1000).remove()
+			);
 
+	  d3.select('.plot')
+			.selectAll('.dot')
+			.data(selected_countries)
+			.join(
+				enter => enter.append('g')
+											.attr("class", "dot")
+											.selectAll("circle")
+											.data(function(d) {
+												return d.Data
+											}).enter()
+												.append("circle")
+												.attrs({
+													"r": 5,
+													"cx": function(d, i) {
+														return scales.x(d.year);
+													},
+													"cy": function(d, i) {
+														return scales.y(d.data);
+													}
+												}),
+				update => update.selectAll("circle")
+												.data(function(d){
+													return d.Data
+												}).join(
+													enter => enter.append("circle")
+																				.transition().duration(1000)
+																				.attrs({
+																					"r": 5,
+																					"cx": function(d, i) {
+																						return scales.x(d.year);
+																					},
+																					"cy": function(d, i) {
+																						return scales.y(d.data);
+																					}
+																				}),
+													update => update.transition().duration(1000)
+																					.attrs({
+																						"cx": function(d, i) {
+																							return scales.x(d.year);
+																						},
+																						"cy": function(d, i) {
+																							return scales.y(d.data);
+																						}
+																					}),
+													exit => exit.transition().remove()
+												),
+				remove => remove.transition().remove()
+			)
+}
 
 function add_axes(scales){
     	let x_axis = d3.axisBottom()
     			.scale(scales.x),
     			y_axis = d3.axisLeft()
     			.scale(scales.y);
+			var year = d3.select("#forward_button").property('value');
+			var tick = Number(year) + 1 - 2000;
+			x_axis.ticks(tick);
 
     	d3.select('#axes')
     		.append('g')
@@ -170,6 +240,10 @@ function update_axes(scales){
     			.scale(scales.x),
     	y_axis = d3.axisLeft()
     			.scale(scales.y);
+
+	var year = d3.select("#forward_button").property('value');
+	var tick = Number(year) + 1 - 2000;
+	x_axis.ticks(tick);
 
 	d3.select('#x_axis').remove()
 	d3.select('#y_axis').remove()
@@ -294,6 +368,7 @@ function button_year(data) {
 				if (next_year <= 2015) {
 					change_year(next_year);
 					update_map_color(data);
+					update_line_on_click(data);
 				}
 			});
 	var backwardButton = d3.select("#backward_button")
@@ -303,6 +378,7 @@ function button_year(data) {
 				if (next_year >= 2000) {
 					change_year(next_year);
 					update_map_color(data);
+					update_line_on_click(data);
 				}
 			});
 }
