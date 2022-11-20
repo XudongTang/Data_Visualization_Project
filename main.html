@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+    <head>
+            <script src="https://d3js.org/d3.v7.min.js"></script>
+            <script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
+            <link rel="stylesheet" href="main.css">
+    </head>
+    <body>
+		 <div style="float:right; width: 75%">
+	    <svg class="worldmap" height=500 width=900>
+			   	  <g id="map"/>
+      </svg>
+			<svg class="plot" height=500 width=900>
+            <g id="series"/>
+						<g id="axes"/>
+			</svg>
+		</div>
+		<div class="button" style="float:left; vertical_align:middle">
+
+			<form>
+        <fieldset>
+					<legend>Current Year</legend>
+					<text id="year">2000</text>
+				</fieldset>
+				<fieldset>
+					<legend>Select Continent</legend>
+					<select id="select_cont"></select>
+				</fieldset>
+				<fieldset>
+					<legend>Select Sub-region</legend>
+					<select id="select_sub_cont"></select>
+				</fieldset>
+				<fieldset>
+					<legend>Select variable of interest</legend>
+					<select id="select_variable"></select>
+				</fieldset>
+				<fieldset>
+					<legend>Select plot type</legend>
+					<select id="select_plot"></select>
+				</fieldset>
+				<fieldset>
+					<legend>Move to next year</legend>
+					<button type="button" id="forward_button"> Next year!</button>
+				</fieldset>
+				<fieldset>
+					<legend>Move to previous year</legend>
+					<button type="button" id="backward_button"> Previous year!</button>
+				</fieldset>
+			</form>
+		</div>
+    </body>
+    <script src="visual_world.js"></script>
+</html>
