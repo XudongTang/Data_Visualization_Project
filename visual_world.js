@@ -158,6 +158,7 @@ function make_scales(selected_countries){
 // Draw
 function update_line_on_click(data) {
 	var selected_countries = line_select_country(data);
+	console.log(selected_countries)
 	scales = make_scales(selected_countries);
 	update_line(selected_countries, scales);
 	update_axes(scales);
