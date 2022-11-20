@@ -171,90 +171,95 @@ function update_line(selected_countries, scales){
     			.y(d => scales.y(d.data));
 
 
-    d3.select('#series')
-    	.selectAll('path')
-    	.data(selected_countries)
-			.join(
-				enter => enter.append('path')
-					.transition().duration(1000).attrs({
-					d: function(d) {
-							return path_generator(d.Data)
-						},
-					stroke: '#0c0c0c',
-					'stroke-width': 2,
-					fill: 'none'
-				}),
-				update => update.transition()
-												.duration(1000)
-												.attr("d", function(d) {
-													return path_generator(d.Data)
-												}),
-				exit => exit.transition().duration(1000).remove()
-			);
+    	d3.select('#series')
+    		.selectAll('path')
+    		.data(selected_countries)
+		.join(
+			enter => enter.append('path')
+			.transition().duration(1000).attrs({
+				d: function(d) {
+					return path_generator(d.Data)
+				},
+				stroke: '#0c0c0c',
+				'stroke-width': 2,
+				fill: 'none'
+			}),
+			update => update.transition().duration(1000)
+			.attr(
+				"d", function(d) {
+					return path_generator(d.Data)
+				}
+			),
+			exit => exit.transition().duration(1000).remove()
+		);
 
-	  d3.select('.plot')
-			.selectAll('.dot')
-			.data(selected_countries)
-			.join(
-				enter => enter.append('g')
-											.attr("class", "dot")
-											.selectAll("circle")
-											.data(function(d) {
-												return d.Data
-											}).enter()
-												.append("circle")
-												.attrs({
-													"r": 5,
-													"cx": function(d, i) {
-														return scales.x(d.year);
-													},
-													"cy": function(d, i) {
-														return scales.y(d.data);
-													},
-													"fill": function (d, i) {
-														return color.fill(d.data)
-													},
-													"stoke-width": 1,
-													"stroke": "black"
-												}),
-				update => update.selectAll("circle")
-												.data(function(d){
-													return d.Data
-												}).join(
-													enter => enter.append("circle")
-																				.transition().duration(1000)
-																				.attrs({
-																					"r": 5,
-																					"cx": function(d, i) {
-																						return scales.x(d.year);
-																					},
-																					"cy": function(d, i) {
-																						return scales.y(d.data);
-																					},
-																					"fill": function (d, i) {
-																						return color.fill(d.data)
-																					},
-																					"stoke-width": 1,
-																					"stroke": "black"
-																				}),
-													update => update.transition().duration(1000)
-																					.attrs({
-																						"cx": function(d, i) {
-																							return scales.x(d.year);
-																						},
-																						"cy": function(d, i) {
-																							return scales.y(d.data);
-																						},
-																						"fill": function (d, i) {
-																							return color.fill(d.data)
-																						}
-																					}),
-													exit => exit.transition().duration(1000).remove()
-												),
-				exit => exit.selectAll("circle").data(function(d){
-					return d.Data
-				}).transition().duration(1000).remove()
-			)
+	d3.select('.plot')
+		.selectAll('.dot')
+		.data(selected_countries)
+		.join(
+			enter => enter.append('g')
+			.attr("class", "dot")
+			.selectAll("circle")
+			.data(function(d) {
+				return d.Data
+			}).enter()
+			.append("circle")
+			.attrs({
+				"r": 5,
+				"cx": function(d, i) {
+					return scales.x(d.year);
+				},
+				"cy": function(d, i) {
+					return scales.y(d.data);
+				},
+				"fill": function (d, i) {
+					return color.fill(d.data)
+				},
+				"stoke-width": 1,
+				"stroke": "black"
+			}),
+			
+			update => update.selectAll("circle")
+			.data(function(d){
+				return d.Data
+			}).join(
+				enter => enter.append("circle")
+					.transition().duration(1000)
+					.attrs({
+						"r": 5,
+						"cx": function(d, i) {
+							return scales.x(d.year);
+						},
+						"cy": function(d, i) {
+							return scales.y(d.data);
+						},
+						"fill": function (d, i) {
+							return color.fill(d.data)
+						},
+						"stoke-width": 1,
+						"stroke": "black"
+					}),
+				update => update.transition().duration(1000)
+				.attrs({
+					"cx": function(d, i) {
+						return scales.x(d.year);
+					},
+					"cy": function(d, i) {
+						return scales.y(d.data);
+					},
+					"fill": function (d, i) {
+						return color.fill(d.data);
+					}
+				}),
+				exit => exit.transition().duration(1000).remove()
+			),
+
+			exit => exit.selectAll("circle")
+			.data(function(d){
+				return d.Data
+			})
+			.transition().duration(1000).remove()
+		)
 }
 
 function add_axes(scales){
