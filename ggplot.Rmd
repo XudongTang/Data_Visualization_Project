@@ -28,8 +28,6 @@ library(colorspace)
 library(ggalluvial)
 library(scales)
 ```
-
-
 ```{r}
 #read data
 life<-read.csv("/Users/yujiacheng/Desktop/Data_Visualization_Project/life_expectancy_data.csv")
@@ -39,7 +37,6 @@ colnames(life)[colnames(life)=="Adult_mortality"] <- "adult_mortality"
 colnames(life)[colnames(life)=="Infant_death"] <- "infant_deaths"
 #life
 ```
-
 ```{r}
 #choose 16 countries from different continents as plot examples
 subset_country <- c("United States",
@@ -59,13 +56,14 @@ subset_country <- c("United States",
                     "Chad",
                     "Ethiopia")
 ```
-
 ```{r}
 #csv with the countries' continent in order to combine the country with its continent
 continent= read.csv("/Users/yujiacheng/Desktop/Data_Visualization_Project/Continents.csv")
 ```
 
 
+
+We try the horizon plot, using the average life expectancy of all countries as the horizon line, dividing it into 10 ranges according to the lowest value of 39.4 to the maximum of 83.8, which can make the space for the y-axis range relatively small.  Even if the common y-axis is not used, it can still compare the 15-year life expectancy of multiple countries in a same graph simultaneously. 
 ```{r}
 #the horizon plot
 
@@ -92,7 +90,13 @@ life %>%
   ylab("Life Expectancy")+
   theme(plot.title = element_text(hjust = 0.5))
 ```
+Since the change of life expectancy in some countries is within 5 years and the minimum interval of the artificially defined division is 5 years, the horizon plot is relatively not intuitive. It can only be used to observe the approximate range of the life expectancy or the overall change trend of life expectancy within 15 years.
 
+
+
+
+The line plot with faceting can clearly show the changing trend of life expectancy in each different country. Filling with different continents increases the comparison between continent variables. According to the 15-year average life expectancy to reorder the country, we can see the comparison in the overall life expectancy of different countries. 
+The advantage of the traditional line chart is that it can compare the life expectancy trends and ranges between countries as a whole, because all countries share a common x-axis (year) and y-axis (life expectancy).
 ```{r}
 #Line plot is to use faceting with reordering countries by life expectancy
 
@@ -111,7 +115,26 @@ life %>%
   ylab("Life Expectancy")+
   theme(plot.title = element_text(hjust = 0.5))
 ```
+```{r}
+life %>%
+  filter(Country %in% subset_country)%>%
+  ggplot()+
+  geom_line(aes(x=Year, y=life_expectancy, color=Country))+
+  scale_y_continuous(expand = c(0, 0))+
+  scale_x_discrete(expand = c(0, 0)) +
+  theme(legend.position="bottom")+
+  labs(y = "Life Expectancy")+
+  theme_minimal()+
+  ggtitle("Line Plot") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+Although the line plot with faceting is very clear, it is a waste of space. In the future, this plot can be introduced to the dynamic d3, only to display the country and year selected by the user, which can be seen the trend they care about. 
+When all countries are presented in a traditional line map, and if the user selects lots of concerned countries, the plot may be messy. The line and the name of the country may not correspond to each other well with the naked eye. At this time, we can consider introducing a fourth-dimensional presentation method, such as one-to-one correspondence between colors and labels.
 
+
+
+
+Segment marks can avoid faceting different countries in each small plot and save space, since it compares the 15-year life expectancy of different countries vertically in one plot. The comparison between the overall levels of life expectancy in different countries can be shown more clearly by reordering the countries with the maximum life expectancy in all year.
 ```{r}
 #Segment marks
 
@@ -139,8 +162,12 @@ life %>%
   )+
   theme_minimal()
 ```
+Segment marks ignore the changes between different years in the same country, and only select the minimum life expectancy and maximum life expectancy in 15 years, so the year variable is not very useful at this time and the user cannot compare the life expectancy of the selected year.
 
 
+
+
+The heatmap with category can clearly show which value range the life expectancy of different years belongs to.
 ```{r}
 #heatmap with category
 life$category <-cut(life$life_expectancy,breaks=c(-Inf,60,75,Inf),labels=c("45-60","61-75","76-90"))
@@ -156,8 +183,12 @@ life %>%
   ggtitle("Heatmap with Category") +
   theme(plot.title = element_text(hjust = 0.5))
 ```
+The y-axis of the heatmap with category will overlap if the user selects many countries.
 
 
+
+
+The heatmap is very compact and relatively accessible because colors can visually indicate the range of life expectancy in different countries, and it also avoids the clutter of the line plot due to multiple comparisons in many countries.
 ```{r}
 #a heatmap with each country on its own line
 
@@ -175,31 +206,12 @@ life %>%
   ggtitle("Heatmap") +
   theme(plot.title = element_text(hjust = 0.5))
 ```
-```{r}
-life %>%
-  filter(Country %in% subset_country)%>%
-  ggplot()+
-  geom_line(aes(x=Year, y=life_expectancy, color=Country))+
-  scale_y_continuous(expand = c(0, 0))+
-  scale_x_discrete(expand = c(0, 0)) +
-  theme(legend.position="bottom")+
-  labs(y = "Life Expectancy")+
-  theme_minimal()+
-  ggtitle("Line Plot") +
-  theme(plot.title = element_text(hjust = 0.5))
-```
+We cannot see the trends clearly in the heatmap because differences in color are harder to evaluate than differences in y-position.
 
-```{r}
-life %>%
-  filter(Country %in% subset_country)%>%
-  ggplot()+
-  geom_alluvium(aes(Year, life_expectancy, fill = Country, alluvium = Country), decreasing = FALSE, alpha = 0.9) +
-  theme(legend.position = "bottom")+
-  theme_minimal()+
-  labs(y = "Life Expectancy")+
-  ggtitle("Line Plot") +
-  theme(plot.title = element_text(hjust = 0.5))
-```
+
+
+
+The stacked area graph makes it easier to tell the contrast of the total within continent groups and the trend of each country at any timepoint, and also keeps the image from looking cluttered even if there are many countries due to faceting.
 ```{r}
 #the stacked area graph
 life=merge(continent,life)
@@ -213,6 +225,12 @@ life %>%
   ggtitle("Stacked Area Graph") +
   theme(plot.title = element_text(hjust = 0.5))
 ```
+The stacked area graph cannot contrast the value of each country across the groups and is also difficult to rank the contribution when it is quite similar within the groups. 
+
+
+
+
+An alluvial plot can rank the contribution explicitly within the groups, compared with the stacked one.
 ```{r}
 #the alluvial plot to explicitly rank the groups of continents
 life=merge(continent,life)
@@ -227,6 +245,6 @@ life %>%
   ggtitle("Alluvial Plot") +
   theme(plot.title = element_text(hjust = 0.5))
 ```
-
+An alluvial plot will ignore the specific value of each country and it is difficult to compare the value across the groups.
 
 

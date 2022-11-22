@@ -54,6 +54,8 @@ life <- life %>%
 life
 ```
 
+
+We first tried the shiny app because of its interactivity with the user. The user can choose the concerned country, the time point of the year or the year interval, and the life expectancy or adult mortality or infant death to view the related health condition. The trend and distribution of the variables such as life expectancy in a country over time will be clearly displayed.
 ```{r}
 ui <- fluidPage(
     titlePanel("Health condition in 2000-2015"),
@@ -197,3 +199,4 @@ server <- function(input, output) {
 shinyApp(ui=ui, server=server)
 ```
 
+The dynamic display of the Shiny app is relatively limited. Since the total number of countries is too large, displaying many countries at the same time will appear messy in one picture. Besides, the interaction with users is limited as well, because there is no way to compare countries within and across different continent groups.
