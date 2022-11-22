@@ -190,7 +190,8 @@ function update_line(selected_countries, scales){
 					return path_generator(d.Data)
 				}
 			),
-			exit => exit.transition().duration(1000).remove()
+			exit => exit.attr("stroke-opacity", 1).transition()
+			.duration(500).attr("stroke-opacity", 0).remove()
 		);
 
 	d3.select('.plot')
@@ -251,14 +252,27 @@ function update_line(selected_countries, scales){
 						return color.fill(d.data);
 					}
 				}),
-				exit => exit.transition().duration(1000).remove()
+				exit => exit.attrs({
+					"fill-opacity": 1,
+					"stroke-opacity": 1
+				}).transition().duration(500).attrs({
+					"fill-opacity": 0,
+					"stroke-opacity": 0
+				}).remove()
 			),
 
 			exit => exit.selectAll("circle")
 			.data(function(d){
 				return d.Data
+			}).attrs({
+				"fill-opacity": 1,
+				"stroke-opacity": 1
 			})
-			.transition().duration(1000).remove()
+			.transition().duration(500)
+			.attrs({
+				"fill-opacity": 0,
+				"stroke-opacity": 0
+			}).remove()
 		)
 }
 
