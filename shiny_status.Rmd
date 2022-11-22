@@ -20,9 +20,9 @@ library(tidyverse)
 
 ```{r}
 life<-read.csv("/Users/yujiacheng/Desktop/Data_Visualization_Project/life_expectancy_data.csv")
-colnames(life)[colnames(life)=="Life.expectancy"] <- "life_expectancy"
-colnames(life)[colnames(life)=="Adult.Mortality"] <- "adult_mortality"
-colnames(life)[colnames(life)=="infant.deaths"] <- "infant_deaths"
+colnames(life)[colnames(life)=="Life_expectancy"] <- "life_expectancy"
+colnames(life)[colnames(life)=="Adult_mortality"] <- "adult_mortality"
+colnames(life)[colnames(life)=="Infant_death"] <- "infant_deaths"
 life
 ```
 
@@ -40,7 +40,7 @@ ui <- fluidPage(
         sidebarPanel(
             selectizeInput("countryInput", "Country",
                            choices = unique(life$Country),  
-                           selected="United States of America", multiple =FALSE), 
+                           selected="United States", multiple =FALSE), 
 
             checkboxGroupInput("statusInput", "Status",
                                choices = c("Developing",

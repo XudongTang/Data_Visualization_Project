@@ -2,7 +2,9 @@
 title: "ggplot"
 author: "Jiacheng"
 date: "2022-11-17"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -28,29 +30,18 @@ library(scales)
 ```
 
 
-```{r, echo = FALSE, message = FALSE, warning = FALSE}
-th <- theme_minimal() + 
-  theme(
-    panel.grid.minor = element_blank(),
-    panel.background = element_rect(fill = "#f7f7f7"),
-    panel.border = element_rect(fill = NA, color = "#0c0c0c", size = 0.6),
-    axis.text = element_text(size = 14),
-    axis.title = element_text(size = 16),
-    legend.position = "bottom"
-  )
-theme_set(th)
-```
-
 ```{r}
+#read data
 life<-read.csv("/Users/yujiacheng/Desktop/Data_Visualization_Project/life_expectancy_data.csv")
-colnames(life)[colnames(life)=="Life.expectancy"] <- "life_expectancy"
-colnames(life)[colnames(life)=="Adult.Mortality"] <- "adult_mortality"
-colnames(life)[colnames(life)=="infant.deaths"] <- "infant_deaths"
-life
+#rename columns
+colnames(life)[colnames(life)=="Life_expectancy"] <- "life_expectancy"
+colnames(life)[colnames(life)=="Adult_mortality"] <- "adult_mortality"
+colnames(life)[colnames(life)=="Infant_death"] <- "infant_deaths"
+#life
 ```
 
 ```{r}
-cutpoints <- seq(35, 90, by = 5)
+#choose 16 countries from different continents as plot examples
 subset_country <- c("United States",
                     "China",
                     "Australia",
@@ -60,73 +51,99 @@ subset_country <- c("United States",
                     "France",
                     "Germany",
                     "India",
-                    "Iran",
+                    "Iraq",
                     "Mexico",
                     "New Zealand",
                     "Norway",
                     "Russian Federation",
                     "Chad",
                     "Ethiopia")
+```
+
+```{r}
+#csv with the countries' continent in order to combine the country with its continent
+continent= read.csv("/Users/yujiacheng/Desktop/Data_Visualization_Project/Continents.csv")
+```
+
+
+```{r}
+#the horizon plot
+
+#according to the range of life expectancy decide the cutpoints
+cutpoints <- seq(35, 85, by = 5)
+#compute the mean of the life expectancy of these 16 countries
+#life %>%
+  #filter(Country %in% subset_country) %>%
+  #summarise(mean_life = mean(life_expectancy, na.rm = TRUE))
+
 life %>%
   filter(Country %in% subset_country) %>%
   ggplot() +
-  geom_horizon(aes(Year,life_expectancy, fill = ..Cutpoints..), origin = 47.6,horizonscale = cutpoints) +
+  #origin defined as the mean of the life expectancy of these 16 countries
+  geom_horizon(aes(Year,life_expectancy, fill = ..Cutpoints..), origin = 71.63764,horizonscale = cutpoints) +
   scale_fill_hcl(palette = 'RdBu') +
   facet_grid(reorder(Country, -life_expectancy) ~ .) +
   theme(
     strip.text.y = element_text(angle = 0),
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank()
-  )
+  )+
+  ggtitle("Horizon Plot of Life Expectancy") +
+  ylab("Life Expectancy")+
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 ```{r}
-continent= read.csv("/Users/yujiacheng/Desktop/Data_Visualization_Project/Continents.csv")
+#Line plot is to use faceting with reordering countries by life expectancy
+
+#add a new column to merge continent with each country
 life=merge(continent,life)
-#life
-subset_country <- c("United States",
-                    "China",
-                    "Australia",
-                    "Brazil",
-                    "Canada",
-                    "South Sudan",
-                    "France",
-                    "Germany",
-                    "India",
-                    "Iran",
-                    "Mexico",
-                    "New Zealand",
-                    "Norway",
-                    "Russian Federation",
-                    "Chad",
-                    "Ethiopia")
 life %>%
   filter(Country %in% subset_country) %>%
   ggplot() +
+  #lines' color by different continent
   geom_line(aes(Year,life_expectancy,color=Continent)) +
+  #facet by different country
   facet_wrap(~ reorder(Country, -life_expectancy))+
   labs(color="Continent")+
+  theme_minimal()+
+  ggtitle("Line Plot with Faceting") +
+  ylab("Life Expectancy")+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+#Segment marks
+
+life %>%
+  filter(Country %in% subset_country) %>%
+  group_by(Country) %>%
+  #'Summarise' finds the minimum and maximum life expectancy restricted to each country
+  summarise(
+    min_life = min(life_expectancy),
+    max_life = max(life_expectancy)
+  )%>%
+  ggplot() +
+  #each bar isn't anchored at 0 due to 'segment' call
+  geom_segment(
+    #reorder the country(y axis) by maximum life expectancy
+    aes(min_life, reorder(Country, max_life), xend = max_life, yend = Country, col = Country),
+    size = 5,
+  ) +
+  labs(x = "Minimum and Maximum Life Expectancy", col = "Country", y = "Country") +
+  xlim(35, 85)+
+  #add country name on each of the segment
+  geom_text(
+    aes(x = min_life, y = reorder(Country, max_life), label = Country),
+    nudge_x = 0.08 
+  )+
   theme_minimal()
 ```
+
+
 ```{r}
+#heatmap with category
 life$category <-cut(life$life_expectancy,breaks=c(-Inf,60,75,Inf),labels=c("45-60","61-75","76-90"))
-#life
-subset_country <- c("United States",
-                    "China",
-                    "Australia",
-                    "Brazil",
-                    "Canada",
-                    "South Sudan",
-                    "France",
-                    "Germany",
-                    "India",
-                    "Iran",
-                    "Mexico",
-                    "New Zealand",
-                    "Norway",
-                    "Russian Federation",
-                    "Chad",
-                    "Ethiopia")
 life %>%
   filter(Country %in% subset_country) %>%
   ggplot() +
@@ -134,11 +151,16 @@ life %>%
   scale_x_continuous (expand = c(0, 0))+
   scale_fill_distiller (direction = 1) +
   facet_grid(Country ~ .)+
-  theme(strip.text.y = element_text (angle = 0))
+  theme(strip.text.y = element_text (angle = 0))+
+  labs(y = "Category",fill='Life Expectancy')+
+  ggtitle("Heatmap with Category") +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 
 ```{r}
+#a heatmap with each country on its own line
+
 life %>%
   filter(Country %in% subset_country) %>%
   ggplot() +
@@ -147,7 +169,11 @@ life %>%
   scale_x_continuous(expand = c(0, 0))+
   #scale_x_yearquarter(expand = c(0, 0)) +
   scale_y_discrete(expand = c(0, 0)) +
-  scale_color_distiller(direction = 1)
+  scale_color_distiller(direction = 1)+
+  labs(y = "Country")+
+  theme_minimal()+
+  ggtitle("Heatmap") +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 ```{r}
 life %>%
@@ -156,7 +182,11 @@ life %>%
   geom_line(aes(x=Year, y=life_expectancy, color=Country))+
   scale_y_continuous(expand = c(0, 0))+
   scale_x_discrete(expand = c(0, 0)) +
-  theme(legend.position="bottom")
+  theme(legend.position="bottom")+
+  labs(y = "Life Expectancy")+
+  theme_minimal()+
+  ggtitle("Line Plot") +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 ```{r}
@@ -164,60 +194,38 @@ life %>%
   filter(Country %in% subset_country)%>%
   ggplot()+
   geom_alluvium(aes(Year, life_expectancy, fill = Country, alluvium = Country), decreasing = FALSE, alpha = 0.9) +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom")+
+  theme_minimal()+
+  labs(y = "Life Expectancy")+
+  ggtitle("Line Plot") +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 ```{r}
-continent= read.csv("/Users/yujiacheng/Desktop/Data_Visualization_Project/Continents.csv")
+#the stacked area graph
 life=merge(continent,life)
-#life
-subset_country <- c("United States",
-                    "China",
-                    "Australia",
-                    "Brazil",
-                    "Canada",
-                    "South Sudan",
-                    "France",
-                    "Germany",
-                    "India",
-                    "Iran",
-                    "Mexico",
-                    "New Zealand",
-                    "Norway",
-                    "Russian Federation",
-                    "Chad",
-                    "Ethiopia")
 life %>%
   filter(Country %in% subset_country) %>%
   ggplot() +
   geom_stream(aes(Year, life_expectancy, fill = Country), bw = 1) +
-  facet_wrap(~ Continent, scale = "free_y")
+  facet_wrap(~ Continent, scale = "free_y")+
+  labs(y = "Life Expectancy")+
+  theme_minimal()+
+  ggtitle("Stacked Area Graph") +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 ```{r}
-continent= read.csv("/Users/yujiacheng/Desktop/Data_Visualization_Project/Continents.csv")
+#the alluvial plot to explicitly rank the groups of continents
 life=merge(continent,life)
-#life
-subset_country <- c("United States",
-                    "China",
-                    "Australia",
-                    "Brazil",
-                    "Canada",
-                    "South Sudan",
-                    "France",
-                    "Germany",
-                    "India",
-                    "Iran",
-                    "Mexico",
-                    "New Zealand",
-                    "Norway",
-                    "Russian Federation",
-                    "Chad",
-                    "Ethiopia")
 life %>%
   filter(Country %in% subset_country) %>%
   ggplot() +
   geom_alluvium(aes(Year,  life_expectancy, fill = Country, alluvium = Country), decreasing = FALSE, alpha = 0.9) +
   facet_wrap(~ Continent, scale = "free_y") +
-  scale_y_continuous(labels = label_number(scale_cut = cut_long_scale()))
+  scale_y_continuous(labels = label_number(scale_cut = cut_long_scale()))+
+  labs(y = "Life Expectancy")+
+  theme_minimal()+
+  ggtitle("Alluvial Plot") +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 
