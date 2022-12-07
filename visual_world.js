@@ -108,10 +108,10 @@ function get_continents(data, year, target){
 	for(let j = 0; j <= Number(year) - 2000; j++){
 		tmp = {}
 		for(let i = 0; i < data.features.length; i++){
-			if(data.features[i].properties.continent in tmp){
-				tmp[data.features[i].properties.continent].push(data.features[i].properties.statistics[j][target])
+			if(data.features[i].properties.region_un in tmp){
+				tmp[data.features[i].properties.region_un].push(data.features[i].properties.statistics[j][target])
 			}else{
-				tmp[data.features[i].properties.continent] = [data.features[i].properties.statistics[j][target]]
+				tmp[data.features[i].properties.region_un] = [data.features[i].properties.statistics[j][target]]
 			}
 		}
 		keys = Object.keys(tmp)
@@ -143,7 +143,7 @@ function get_subcontinents(data, year, target, region_un){
 	for(let j = 0; j <= Number(year) - 2000; j++){
 		tmp = {}
 		for(i = 0; i < data.features.length; i++){
-			if(data.features[i].properties.continent === region_un){
+			if(data.features[i].properties.region_un === region_un){
 				if(data.features[i].properties.subregion in tmp){
 					tmp[data.features[i].properties.subregion].push(data.features[i].properties.statistics[j][target])
 				}else{
@@ -178,7 +178,6 @@ function get_subcontinents(data, year, target, region_un){
 
 
 function line_select_country(data) {
-	console.log(data)
 	var selected_countries = [];
 	var region_un = d3.select('#select_cont').property('value');
 	var subregion = d3.select('#select_sub_cont').property('value')
@@ -197,7 +196,6 @@ function line_select_country(data) {
 			}
 		}
 	}
-	console.log(selected_countries)
 	return selected_countries;
 }
 function find_domain(selected_countries){
@@ -212,9 +210,9 @@ function find_domain(selected_countries){
 
 function make_scales(selected_countries){
 	var values = find_domain(selected_countries)
-	var years = [2000, Number(d3.select("#forward_button").property('value'))];
+	var years = d3.range(2000, Number(d3.select("#forward_button").property('value')) + 1);
 	return{
-        	x: d3.scaleLinear()
+        	x: d3.scalePoint()
         		.domain(years)
         		.range([margins.left, width - margins.right]),
         	y: d3.scaleLinear()
@@ -244,25 +242,27 @@ function update_line(selected_countries, scales){
     	d3.select('#series')
     		.selectAll('path')
     		.data(selected_countries)
-		.join(
-			enter => enter.append('path')
-			.transition().duration(1000).attrs({
-				d: function(d) {
-					return path_generator(d.Data)
-				},
-				stroke: d => line_color(d.Name),
-				'stroke-width': 2,
-				fill: 'none'
-			}),
-			update => update.transition().duration(1000)
-			.attr(
-				"d", function(d) {
-					return path_generator(d.Data)
-				}
-			),
-			exit => exit.attr("stroke-opacity", 1).transition()
-			.duration(500).attr("stroke-opacity", 0).remove()
-		);
+				.join(
+					enter => enter.append('path')
+					.transition().duration(1000).attrs({
+						d: function(d) {
+							return path_generator(d.Data)
+						},
+						stroke: d => line_color(d.Name),
+						'stroke-width': 5,
+						fill: 'none'
+					}),
+					update => update.transition().duration(1000)
+					.attr(
+						"d", function(d) {
+							return path_generator(d.Data)
+						}
+					),
+					exit => exit.attr("stroke-opacity", 1).transition()
+					.duration(500).attr("stroke-opacity", 0).remove()
+			)
+			.on("mouseover", (_, d) => mouseover_line(d))
+			.on("mouseout", (_, d) => mouseout(d))
 
 	d3.select('.plot')
 		.selectAll('.dot')
@@ -289,7 +289,7 @@ function update_line(selected_countries, scales){
 				"stoke-width": 1,
 				"stroke": "black"
 			}),
-			
+
 			update => update.selectAll("circle")
 			.data(function(d){
 				return d.Data
@@ -449,7 +449,7 @@ function update_map_position(selected) {
 function map_init(data) {
 	let proj = d3.geoMercator().fitExtent([[0, 0],[width, height]], data);
 	let path = d3.geoPath().projection(proj);
-
+	console.log(data.features)
 	let scale = {
 		fill: d3.scaleQuantize()
 		.domain([38, 84])
@@ -466,7 +466,114 @@ function map_init(data) {
         "stroke-width": 1,
 				"stroke": "black",
 				name: d => d.properties.adm0_a3
-			});
+			})
+		.on("mouseover", (_, d) => mouseover_map(d))
+		.on("mouseout", (_, d) => mouseout(d))
+
+	d3.select("#name")
+    .append("text")
+    .attr("transform", "translate(0, 40	)")
+    .text(" ")
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////// hover function //////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+function mouseover_line(d) {
+	var region_un = d3.select('#select_cont').property('value');
+	var subregion = d3.select('#select_sub_cont').property('value')
+
+	d3.select("#series")
+		.selectAll("path")
+		.transition().duration(200)
+		.attrs({
+			"stroke-width": e => e.Name === d.Name ? 12:5
+		});
+
+	if (region_un === "All") {
+		d3.select("#map")
+		.selectAll("path")
+		.transition().duration(200)
+		.attrs({
+			"stroke-width": e => e.properties.region_un === d.Name ? 3:1
+		});
+	} else if (subregion === "All") {
+		d3.select("#map")
+		.selectAll("path")
+		.transition().duration(200)
+		.attrs({
+			"stroke-width": e => e.properties.subregion === d.Name ? 3:1
+		});
+	} else {
+		d3.select("#map")
+		.selectAll("path")
+		.transition().duration(200)
+		.attrs({
+			"stroke-width": e => e.properties.statistics[0].Country === d.Name ? 3:1
+		});
+	}
+	d3.select("#name")
+		.select("text")
+		.text(d.Name)
+}
+
+function mouseover_map(d) {
+	var region_un = d3.select('#select_cont').property('value');
+	var subregion = d3.select('#select_sub_cont').property('value')
+	d3.select("#map")
+	.selectAll("path")
+	.transition().duration(200)
+	.attrs({
+		"stroke-width": e => e.properties.statistics[0].Country === d.properties.statistics[0].Country ? 3:1
+	});
+
+	d3.select("#name")
+		.select("text")
+		.text(d.properties.statistics[0].Country)
+
+	if (region_un === "All") {
+		d3.select("#series")
+		.selectAll("path")
+		.transition().duration(200)
+		.attrs({
+			"stroke-width": e => e.Name === d.properties.region_un ? 12:5
+		});
+	} else if (subregion === "All") {
+		d3.select("#series")
+		.selectAll("path")
+		.transition().duration(200)
+		.attrs({
+			"stroke-width": e => e.Name === d.properties.subregion ? 12:5
+		});
+	} else {
+		d3.select("#series")
+		.selectAll("path")
+		.transition().duration(200)
+		.attrs({
+			"stroke-width": e => e.Name === d.properties.statistics[0].Country ? 12:5
+		});
+	}
+}
+
+function mouseout(d) {
+	d3.select("#series")
+		.selectAll("path")
+		.transition().duration(200)
+		.attrs({
+			"stroke-width": 5
+		})
+
+	d3.select("#map")
+		.selectAll("path")
+		.transition().duration(200)
+		.attrs({
+			"stroke-width": 1
+		})
+
+	d3.select("#name")
+		.select("text")
+		.text(" ")
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -637,7 +744,6 @@ function update_sub_cont(select, data, prevSelect) {
 		selected = prevSelect;
 	}
 	update_map_position(selected);
-
 }
 
 Promise.all([
