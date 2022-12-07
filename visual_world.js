@@ -103,7 +103,82 @@ function get_countries(data, year, target, i) {
 	return country;
 }
 
+function get_continents(data, year, target){
+	var continent = {}
+	for(let j = 0; j <= Number(year) - 2000; j++){
+		tmp = {}
+		for(let i = 0; i < data.features.length; i++){
+			if(data.features[i].properties.continent in tmp){
+				tmp[data.features[i].properties.continent].push(data.features[i].properties.statistics[j][target])
+			}else{
+				tmp[data.features[i].properties.continent] = [data.features[i].properties.statistics[j][target]]
+			}
+		}
+		keys = Object.keys(tmp)
+		for(let k = 0; k < keys.length; k++){
+			key = keys[k]
+			array = tmp[key]
+			if(key in continent){
+				continent[key].push(array.reduce((a, b) => a + b) / array.length)
+			}else{
+				continent[key] = [array.reduce((a, b) => a + b) / array.length]
+			}
+		}
+	}
+	result = []
+	keys = Object.keys(continent)
+	for(let k = 0; k < keys.length; k++){
+		key = keys[k]
+		tmp = {'Name': key, 'Data': []}
+		for(let j = 0; j <= Number(year) - 2000; j++){
+			tmp.Data.push({'year': j+2000, 'data': continent[key][j]})
+		}
+		result.push(tmp)
+	}
+	return result
+}
+
+function get_subcontinents(data, year, target, region_un){
+	subcontinent = {}
+	for(let j = 0; j <= Number(year) - 2000; j++){
+		tmp = {}
+		for(i = 0; i < data.features.length; i++){
+			if(data.features[i].properties.continent === region_un){
+				if(data.features[i].properties.subregion in tmp){
+					tmp[data.features[i].properties.subregion].push(data.features[i].properties.statistics[j][target])
+				}else{
+					tmp[data.features[i].properties.subregion] = [data.features[i].properties.statistics[j][target]]
+				}
+			}
+		}
+		keys = Object.keys(tmp)
+		for(let k = 0; k < keys.length; k++){
+			key = keys[k]
+			array = tmp[key]
+			if(key in subcontinent){
+				subcontinent[key].push(array.reduce((a, b) => a + b) / array.length)
+			}else{
+				subcontinent[key] = [array.reduce((a, b) => a + b) / array.length]
+			}
+		}
+	}
+	result = []
+	keys = Object.keys(subcontinent)
+	for(let k = 0; k < keys.length; k++){
+		key = keys[k]
+		tmp = {'Name': key, 'Data': []}
+		for(let j = 0; j <= Number(year) - 2000; j++){
+			tmp.Data.push({'year': j+2000, 'data': subcontinent[key][j]})
+		}
+		result.push(tmp)
+	}
+	return result
+}
+
+
+
 function line_select_country(data) {
+	console.log(data)
 	var selected_countries = [];
 	var region_un = d3.select('#select_cont').property('value');
 	var subregion = d3.select('#select_sub_cont').property('value')
@@ -111,15 +186,9 @@ function line_select_country(data) {
 	var target = d3.select("#select_variable").property("value");
 
 	if(region_un === 'All'){
-		for(let i = 0; i < data.features.length; i++){
-			selected_countries.push(get_countries(data, year, target, i));
-		}
+		selected_countries = get_continents(data, year, target)
 	}else if(subregion === 'All'){
-		for(let i = 0; i < data.features.length; i++){
-			if(data.features[i].properties.region_un === region_un){
-				selected_countries.push(get_countries(data, year, target, i));
-			}
-		}
+		selected_countries = get_subcontinents(data, year, target, region_un)
 	}else{
 		for(let i = 0; i < data.features.length; i++){
 			if(data.features[i].properties.region_un === region_un
@@ -128,9 +197,9 @@ function line_select_country(data) {
 			}
 		}
 	}
+	console.log(selected_countries)
 	return selected_countries;
 }
-
 function find_domain(selected_countries){
 	res = []
 	for(let i = 0; i < selected_countries.length; i++){
@@ -158,13 +227,14 @@ function make_scales(selected_countries){
 // Draw
 function update_line_on_click(data) {
 	var selected_countries = line_select_country(data);
-	console.log(selected_countries)
 	scales = make_scales(selected_countries);
 	update_line(selected_countries, scales);
 	update_axes(scales);
 }
-
 function update_line(selected_countries, scales){
+	line_color = d3.scaleOrdinal()
+	.domain(selected_countries.map(d => d.Name))
+	.range(d3.schemeDark2)
 	color = scale_color();
 	path_generator = d3.line()
     			.x(d => scales.x(d.year))
@@ -180,7 +250,7 @@ function update_line(selected_countries, scales){
 				d: function(d) {
 					return path_generator(d.Data)
 				},
-				stroke: '#0c0c0c',
+				stroke: d => line_color(d.Name),
 				'stroke-width': 2,
 				fill: 'none'
 			}),
