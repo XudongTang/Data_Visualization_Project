@@ -6,6 +6,7 @@ function main(data) {
 	data[1] = parse(data[1]);
 	data = merge_country(data);
 	map_init(data);
+	button_plot(data)
 	button_continent(data);
 	button_variable(data);
 	button_year(data)
@@ -228,6 +229,11 @@ function update_line_on_click(data) {
 	update_axes(scales);
 }
 
+function update_horizon_on_click(data) {
+	var selected_countries = line_select_country(data);
+	console.log(selected_countries)
+}
+
 function update_line(selected_countries, scales){
 	line_color = d3.scaleOrdinal()
 	.domain(selected_countries.map(d => d.Name))
@@ -236,7 +242,6 @@ function update_line(selected_countries, scales){
 	path_generator = d3.line()
     			.x(d => scales.x(d.year))
     			.y(d => scales.y(d.data));
-
 
     	d3.select('#series')
     		.selectAll('path')
@@ -358,7 +363,8 @@ function update_line(selected_countries, scales){
 	.attr('height', 6)
 	.style('fill', function(d){return line_color(d)})
 
-	legend.append('text').attrs({
+	legend.append('text')
+	.attrs({
 		'x': 18,
 		'y': 50,
 		'dy': '.4em'
@@ -378,6 +384,9 @@ function add_axes(scales){
 
     	d3.select('#axes')
     		.append('g')
+				.attr("opacity", 0)
+				.transition().duration(200)
+				.attr("opacity", 1)
     		.attrs({
         	id: 'x_axis',
         		transform: `translate(0, ${height - margins.bottom})`
@@ -403,24 +412,13 @@ function update_axes(scales){
 	var tick = Number(year) + 1 - 2000;
 	x_axis.ticks(tick);
 
-	d3.select('#x_axis').remove()
-	d3.select('#y_axis').remove()
+	d3.select('#x_axis')
+		.transition().duration(1000)
+		.call(x_axis);
 
-	d3.select('#axes')
-    .append('g')
-    .attrs({
-      	id: 'x_axis',
-        transform: `translate(0, ${height - margins.bottom})`
-    })
-    .call(x_axis);
-
-  d3.select('#axes')
-    .append('g')
-    .attrs({
-      	id: 'y_axis',
-        transform: `translate(${margins.left + 150}, 0)`
-    })
-    .call(y_axis);
+	d3.select('#y_axis')
+		.transition().duration(1000)
+		.call(y_axis)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -699,7 +697,13 @@ function button_year(data) {
 				if (next_year <= 2015) {
 					change_year(next_year);
 					update_map_color(data);
-					update_line_on_click(data);
+					const plot = d3.select("#select_plot").property("value");
+					if (plot === "Line plot") {
+						update_line_on_click(data);
+					} else {
+						update_horizon_on_click(data);
+					}
+
 				}
 			});
 	var backwardButton = d3.select("#backward_button")
@@ -709,7 +713,12 @@ function button_year(data) {
 				if (next_year >= 2001) {
 					change_year(next_year);
 					update_map_color(data);
-					update_line_on_click(data);
+					const plot = d3.select("#select_plot").property("value");
+					if (plot === "Line plot") {
+						update_line_on_click(data);
+					} else {
+						update_horizon_on_click(data);
+					}
 				}
 			});
 	d3.select("#year").append("text").text("2001")
@@ -727,7 +736,12 @@ function button_variable(data) {
 	var select = d3.select("#select_variable")
 			.on('change', function(event, d) {
 				update_map_color(data);
-				update_line_on_click(data);
+				const plot = d3.select("#select_plot").property("value");
+				if (plot === "Line plot") {
+					update_line_on_click(data);
+				} else {
+					update_horizon_on_click(data);
+				}
 			});
 	var options = select.selectAll('option')
 				.data(choice).enter()
@@ -740,13 +754,63 @@ function button_variable(data) {
 				})
 }
 
+function button_plot(data) {
+	var choice = ["Line plot", "Horizon plot"];
+	var select = d3.select("#select_plot")
+			.on('change', function(event, d){
+				const plot = d3.select(this).property("value");
+				if (plot === "Line plot") {
+					var selected_countries = line_select_country(data);
+					scales = make_scales(selected_countries);
+					add_axes(scales)
+					update_line_on_click(data);
+				} else {
+					d3.select(".plot").selectAll(".dot")
+						.attr("opacity", 1)
+						.transition().duration(500)
+						.attr("opacity", 0).remove()
+					d3.select(".plot").select("#series")
+						.selectAll("path")
+						.attr("opacity", 1)
+						.transition().duration(500)
+						.attr("opacity", 0).remove()
+					d3.select(".plot").select("#axes")
+						.selectAll("*")
+						.attr("opacity", 1)
+						.transition().duration(500)
+						.attr("opacity", 0).remove()
+					d3.select(".plot").selectAll("#legend")
+						.attr("opacity", 1)
+						.transition().duration(500)
+						.attr("opacity", 0).remove()
+
+					update_horizon_on_click(data);
+				}
+			});
+
+	var options = select.selectAll('option')
+				.data(choice).enter()
+				.append('option')
+				.text(function(d) {
+					return d;
+				})
+				.attr("value",function(d){
+					return d;
+				})
+}
+
 function button_continent(data) {
 	var choice = ["All", "Asia", "Europe", "Africa", "Americas", "Oceania"];
 	var select = d3.select('#select_cont')
 			.on('change', function(event, d) {
 				const selectedOption = d3.select(this).property("value");
 				button_sub_continent(selectedOption, data);
-				update_line_on_click(data);
+				const plot = d3.select("#select_plot").property("value");
+				if (plot === "Line plot") {
+					update_line_on_click(data);
+				} else {
+					update_horizon_on_click(data);
+				}
 			});
 	var options = select.selectAll('option')
 				.data(choice).enter()
@@ -812,7 +876,12 @@ function button_sub_continent(select, data) {
 			.on('change', function(event, d) {
 				const selectedOption = d3.select(this).property("value");
 				update_sub_cont(selectedOption, data, selected);
-				update_line_on_click(data);
+				const plot = d3.select("#select_plot").property("value");
+				if (plot === "Line plot") {
+					update_line_on_click(data);
+				} else {
+					update_horizon_on_click(data);
+				}
 			});
 
 	var options = select.selectAll('option')
