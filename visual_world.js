@@ -344,6 +344,29 @@ function update_line(selected_countries, scales){
 				"stroke-opacity": 0
 			}).remove()
 		)
+	d3.select('.plot').selectAll('#legend').remove()
+	var legend = d3.select('.plot').selectAll('#legend')
+	.data(selected_countries.map(d => d.Name))
+	.enter().append('g')
+	.attr('id', 'legend')
+	.attr('transform', function(d, i){return 'translate(0, ' + i*20 + ')'})
+		
+
+	legend.append('rect')
+	.attr('x', 0)
+	.attr('y', 50)
+	.attr('width', 30)
+	.attr('height', 6)
+	.style('fill', function(d){return line_color(d)})
+	
+	legend
+	.append('text').attrs({
+		'x': 30,
+		'y': 50,
+		'dy': '.35em'
+	})
+	.text(function(d){return d})
+
 }
 
 function add_axes(scales){
