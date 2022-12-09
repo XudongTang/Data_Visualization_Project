@@ -7,7 +7,7 @@
     </head>
     <body>
 		 <div style="float:right; width: 75%">
-      <svg class="hover" height=60 width=900>'
+      <svg class="hover" height=60 width=900>
             <g id="name">
       </svg>
 	    <svg class="worldmap" height=500 width=900>
@@ -16,7 +16,7 @@
 			<svg class="plot" height=500 width=900>
             <g id="series"/>
 						<g id="axes"/>
-			<g id="legend"/>
+			      <g id="legend"/>
 			</svg>
 		</div>
 		<div class="button" style="float:left; vertical_align:middle">
@@ -24,7 +24,15 @@
 			<form>
         <fieldset>
 					<legend>Current Year</legend>
-					<text id="year">2000</text>
+					<text id="year"></text>
+				</fieldset>
+        <fieldset>
+					<legend>Move to next year</legend>
+					<button type="button" id="forward_button"> Next year!</button>
+				</fieldset>
+				<fieldset>
+					<legend>Move to previous year</legend>
+					<button type="button" id="backward_button"> Previous year!</button>
 				</fieldset>
 				<fieldset>
 					<legend>Select Continent</legend>
@@ -41,14 +49,6 @@
 				<fieldset>
 					<legend>Select plot type</legend>
 					<select id="select_plot"></select>
-				</fieldset>
-				<fieldset>
-					<legend>Move to next year</legend>
-					<button type="button" id="forward_button"> Next year!</button>
-				</fieldset>
-				<fieldset>
-					<legend>Move to previous year</legend>
-					<button type="button" id="backward_button"> Previous year!</button>
 				</fieldset>
 			</form>
 		</div>

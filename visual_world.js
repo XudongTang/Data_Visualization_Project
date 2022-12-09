@@ -11,6 +11,7 @@ function main(data) {
 	button_year(data)
 	scales = make_scales(data);
 	add_axes(scales)
+	update_line_on_click(data)
 
 }
 
@@ -23,7 +24,6 @@ function parse(data){
 	var res2 = [];
 	cur_country = data[0].Country;
 	for(let i = 0; i < data.length; i++){
-		//data[i].Year = (new Date(data[i].Year + '-01-03'));
 		if(data[i].Country === cur_country){
 			res2.push(data[i]);
 		}else{
@@ -88,7 +88,6 @@ function scale_color() {
 ////////////////////////////////////////////////////////////////////////////////
 
 // Helpers
-
 function get_countries(data, year, target, i) {
 	var country = {Name: null, Data: []};
 	country.Name = data.features[i].properties.statistics[0].Country;
@@ -175,8 +174,6 @@ function get_subcontinents(data, year, target, region_un){
 	return result
 }
 
-
-
 function line_select_country(data) {
 	var selected_countries = [];
 	var region_un = d3.select('#select_cont').property('value');
@@ -198,6 +195,7 @@ function line_select_country(data) {
 	}
 	return selected_countries;
 }
+
 function find_domain(selected_countries){
 	res = []
 	for(let i = 0; i < selected_countries.length; i++){
@@ -214,7 +212,7 @@ function make_scales(selected_countries){
 	return{
         	x: d3.scalePoint()
         		.domain(years)
-        		.range([margins.left, width - margins.right]),
+        		.range([margins.left + 150, width-15]),
         	y: d3.scaleLinear()
         		.domain(values)
         		.range([height - margins.bottom, margins.top])
@@ -229,6 +227,7 @@ function update_line_on_click(data) {
 	update_line(selected_countries, scales);
 	update_axes(scales);
 }
+
 function update_line(selected_countries, scales){
 	line_color = d3.scaleOrdinal()
 	.domain(selected_countries.map(d => d.Name))
@@ -276,7 +275,7 @@ function update_line(selected_countries, scales){
 			}).enter()
 			.append("circle")
 			.attrs({
-				"r": 5,
+				"r": 7,
 				"cx": function(d, i) {
 					return scales.x(d.year);
 				},
@@ -297,7 +296,7 @@ function update_line(selected_countries, scales){
 				enter => enter.append("circle")
 					.transition().duration(1000)
 					.attrs({
-						"r": 5,
+						"r": 7,
 						"cx": function(d, i) {
 							return scales.x(d.year);
 						},
@@ -350,20 +349,19 @@ function update_line(selected_countries, scales){
 	.enter().append('g')
 	.attr('id', 'legend')
 	.attr('transform', function(d, i){return 'translate(0, ' + i*20 + ')'})
-		
+
 
 	legend.append('rect')
 	.attr('x', 0)
 	.attr('y', 50)
-	.attr('width', 30)
+	.attr('width', 15)
 	.attr('height', 6)
 	.style('fill', function(d){return line_color(d)})
-	
-	legend
-	.append('text').attrs({
-		'x': 30,
+
+	legend.append('text').attrs({
+		'x': 18,
 		'y': 50,
-		'dy': '.35em'
+		'dy': '.4em'
 	})
 	.text(function(d){return d})
 
@@ -390,7 +388,7 @@ function add_axes(scales){
     		.append('g')
     		.attrs({
         		id: 'y_axis',
-        	transform: `translate(${margins.left}, 0)`
+        		transform: `translate(${margins.left + 150}, 0)`
     		})
     		.call(y_axis);
 }
@@ -420,7 +418,7 @@ function update_axes(scales){
     .append('g')
     .attrs({
       	id: 'y_axis',
-        transform: `translate(${margins.left}, 0)`
+        transform: `translate(${margins.left + 150}, 0)`
     })
     .call(y_axis);
 }
@@ -472,7 +470,6 @@ function update_map_position(selected) {
 function map_init(data) {
 	let proj = d3.geoMercator().fitExtent([[0, 0],[width, height]], data);
 	let path = d3.geoPath().projection(proj);
-	console.log(data.features)
 	let scale = {
 		fill: d3.scaleQuantize()
 		.domain([38, 84])
@@ -518,7 +515,7 @@ function mouseover_line(d) {
 		.selectAll("path")
 		.transition().duration(200)
 		.attrs({
-			"stroke-width": e => e.properties.region_un === d.Name ? 3:1
+			"stroke-width": e => e.properties.region_un === d.Name ? 3:1,
 		});
 	} else if (subregion === "All") {
 		d3.select("#map")
@@ -535,9 +532,27 @@ function mouseover_line(d) {
 			"stroke-width": e => e.properties.statistics[0].Country === d.Name ? 3:1
 		});
 	}
+
 	d3.select("#name")
 		.select("text")
 		.text(d.Name)
+
+	d3.select(".plot")
+		.selectAll("#legend")
+		.selectAll("rect")
+		.transition().duration(200)
+		.attrs({
+			"height": e => e === d.Name ? 12:6
+		})
+
+	d3.select(".plot")
+		.selectAll("#legend")
+		.selectAll("text")
+		.transition().duration(200)
+		.attrs({
+			"fill": e => e === d.Name ? "red":"black",
+			"font-weight": e => e === d.Name ? 900:100
+		})
 }
 
 function mouseover_map(d) {
@@ -547,7 +562,7 @@ function mouseover_map(d) {
 	.selectAll("path")
 	.transition().duration(200)
 	.attrs({
-		"stroke-width": e => e.properties.statistics[0].Country === d.properties.statistics[0].Country ? 3:1
+		"stroke-width": e => e.properties.statistics[0].Country === d.properties.statistics[0].Country ? 3:1,
 	});
 
 	d3.select("#name")
@@ -555,19 +570,57 @@ function mouseover_map(d) {
 		.text(d.properties.statistics[0].Country)
 
 	if (region_un === "All") {
+
 		d3.select("#series")
 		.selectAll("path")
 		.transition().duration(200)
 		.attrs({
 			"stroke-width": e => e.Name === d.properties.region_un ? 12:5
 		});
+
+		d3.select(".plot")
+			.selectAll("#legend")
+			.selectAll("rect")
+			.transition().duration(200)
+			.attrs({
+				"height": e => e === d.properties.region_un ? 12:6
+			})
+
+		d3.select(".plot")
+			.selectAll("#legend")
+			.selectAll("text")
+			.transition().duration(200)
+			.attrs({
+				"fill": e => e === d.properties.region_un ? "red":"black",
+				"font-weight": e => e === d.properties.region_un ? 900:100
+			})
+
 	} else if (subregion === "All") {
+
 		d3.select("#series")
 		.selectAll("path")
 		.transition().duration(200)
 		.attrs({
 			"stroke-width": e => e.Name === d.properties.subregion ? 12:5
 		});
+
+		d3.select(".plot")
+			.selectAll("#legend")
+			.selectAll("rect")
+			.transition().duration(200)
+			.attrs({
+				"height": e => e === d.properties.subregion ? 12:6
+			})
+
+		d3.select(".plot")
+			.selectAll("#legend")
+			.selectAll("text")
+			.transition().duration(200)
+			.attrs({
+				"fill": e => e === d.properties.subregion ? "red":"black",
+				"font-weight": e => e === d.properties.subregion ? 900:100
+			})
+
 	} else {
 		d3.select("#series")
 		.selectAll("path")
@@ -575,6 +628,23 @@ function mouseover_map(d) {
 		.attrs({
 			"stroke-width": e => e.Name === d.properties.statistics[0].Country ? 12:5
 		});
+
+		d3.select(".plot")
+			.selectAll("#legend")
+			.selectAll("rect")
+			.transition().duration(200)
+			.attrs({
+				"height": e => e === d.properties.statistics[0].Country ? 12:6
+			})
+
+		d3.select(".plot")
+			.selectAll("#legend")
+			.selectAll("text")
+			.transition().duration(200)
+			.attrs({
+				"fill": e => e === d.properties.statistics[0].Country ? "red":"black",
+				"font-weight": e => e === d.properties.statistics[0].Country ? 900:100
+			})
 	}
 }
 
@@ -590,12 +660,30 @@ function mouseout(d) {
 		.selectAll("path")
 		.transition().duration(200)
 		.attrs({
-			"stroke-width": 1
+			"stroke-width": 1,
+			"stroke": "black"
 		})
 
 	d3.select("#name")
 		.select("text")
 		.text(" ")
+
+	d3.select(".plot")
+		.selectAll("#legend")
+		.selectAll("rect")
+		.transition().duration(200)
+		.attrs({
+			"height": 6
+		})
+
+	d3.select(".plot")
+		.selectAll("#legend")
+		.selectAll("text")
+		.transition().duration(200)
+		.attrs({
+			"fill": "black",
+			"font-weight": 100
+		})
 
 }
 
@@ -605,7 +693,7 @@ function mouseout(d) {
 
 function button_year(data) {
 	var forwardButton = d3.select("#forward_button")
-			.attr("value", 2000)
+			.attr("value", 2001)
 			.on('click', function(event, d){
 				const next_year = Number(d3.select(this).property("value")) + 1;
 				if (next_year <= 2015) {
@@ -615,15 +703,16 @@ function button_year(data) {
 				}
 			});
 	var backwardButton = d3.select("#backward_button")
-			.attr("value", 2000)
+			.attr("value", 2001)
 			.on('click', function(event, d){
 				const next_year = Number(d3.select(this).property("value")) - 1;
-				if (next_year >= 2000) {
+				if (next_year >= 2001) {
 					change_year(next_year);
 					update_map_color(data);
 					update_line_on_click(data);
 				}
 			});
+	d3.select("#year").append("text").text("2001")
 }
 
 function change_year(next_year) {
