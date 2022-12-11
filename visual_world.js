@@ -1,6 +1,6 @@
-let width = 900;
-let height = 500;
-let margins = {top: 50, bottom: 50, left: 50, right: 50}
+let width = 700;
+let height = 350;
+let margins = {top: 20, bottom: 20, left: 20, right: 20}
 
 function main(data) {
 	data[1] = parse(data[1]);
