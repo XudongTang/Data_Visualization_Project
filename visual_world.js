@@ -273,7 +273,7 @@ function update_heatmap(selected_countries, scales) {
 		.selectAll('rect')
 		.data(flatData).join(
 			enter => enter.append('rect')
-			.transition().duration(1000)
+			.transition().duration(500)
 			.attrs({
 				"x": d => scales.xScale(d.year),
 				"y": d => scales.yScale(d.Name),
@@ -288,7 +288,7 @@ function update_heatmap(selected_countries, scales) {
 				"fill-opacity": 0.7
 			}),
 			update => update
-				.transition().duration(1000)
+				.transition().duration(500)
 				.attrs({
 				"x": d => scales.xScale(d.year),
 				"y": d => scales.yScale(d.Name),
@@ -300,7 +300,7 @@ function update_heatmap(selected_countries, scales) {
 				"stroke-opacity": 0.5,
 				"fill-opacity": 0.7
 			})
-			.transition().duration(1000)
+			.transition().duration(500)
 			.attrs({
 				"stroke-opacity": 0,
 				"fill-opacity": 0
@@ -365,7 +365,7 @@ function update_line(selected_countries, scales){
     		.data(selected_countries)
 				.join(
 					enter => enter.append('path')
-					.transition().duration(1000).attrs({
+					.transition().duration(500).attrs({
 						d: function(d) {
 							return path_generator(d.Data)
 						},
@@ -373,7 +373,7 @@ function update_line(selected_countries, scales){
 						'stroke-width': 5,
 						fill: 'none'
 					}),
-					update => update.transition().duration(1000)
+					update => update.transition().duration(500)
 					.attr(
 						"d", function(d) {
 							return path_generator(d.Data)
@@ -416,7 +416,7 @@ function update_line(selected_countries, scales){
 				return d.Data
 			}).join(
 				enter => enter.append("circle")
-					.transition().duration(1000)
+					.transition().duration(500)
 					.attrs({
 						"r": 7,
 						"cx": function(d, i) {
@@ -431,7 +431,7 @@ function update_line(selected_countries, scales){
 						"stoke-width": 1,
 						"stroke": "black"
 					}),
-				update => update.transition().duration(1000)
+				update => update.transition().duration(500)
 				.attrs({
 					"cx": function(d, i) {
 						return scales.x(d.year);
@@ -530,11 +530,11 @@ function update_axes(scales){
 	x_axis.ticks(tick);
 
 	d3.select('#x_axis')
-		.transition().duration(1000)
+		.transition().duration(500)
 		.call(x_axis);
 
 	d3.select('#y_axis')
-		.transition().duration(1000)
+		.transition().duration(500)
 		.call(y_axis)
 }
 
@@ -570,12 +570,12 @@ function update_map_position(selected) {
 				return exit.remove();
 			},
 			function (enter) {
-				return enter.transition().duration(1000).attrs({
+				return enter.transition().duration(500).attrs({
 					d: newpath,
 				})
 			},
 			function (update) {
-				return update.transition().duration(1000).attrs({
+				return update.transition().duration(500).attrs({
 					d: newpath,
 				})
 			}
