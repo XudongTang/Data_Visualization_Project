@@ -221,59 +221,134 @@ function make_scales(selected_countries){
 
 }
 
-function find_horizon_color() {
-	const variable = d3.select("#select_variable").property("value");
-	if (variable === "Life_expectancy") {
-		return d3.schemeRdYlBu[11];
-	} else if (variable === "Adult_mortality") {
-		return d3.schemeReds[9];
-	} else if (variable === "Birth_rate") {
-		return d3.schemeYlGn[9];
-	} else {
-		return d3.schemeOranges[9];
+function scale_heatmap(selected_countries) {
+	var name = [];
+	var year = [];
+	for (var i = 0; i < selected_countries.length; ++i) {
+		name.push(selected_countries[i].Name);
+	}
+	for (var i = 0; i < selected_countries[0].Data.length; ++i) {
+		year.push(selected_countries[0].Data[i].year);
+	}
+	return {
+		xScale: d3.scaleBand()
+						.domain(year)
+						.range([margins.left + 150, width-15])
+						.padding(0.1),
+		yScale: d3.scaleBand()
+						.domain(name)
+						.range([height - margins.bottom, margins.top])
+						.padding(0.05)
 	}
 }
 
 // Draw
+function update_heatmap_on_click(data) {
+	var selected_countries = line_select_country(data);
+	//console.log(selected_countries)
+	scales = scale_heatmap(selected_countries)
+	update_heatmap_axis(scales)
+	update_heatmap(selected_countries, scales)
+}
+
+function heatmap_process(selected_countries) {
+	var flatData = [];
+	for (var i = 0; i < selected_countries.length; ++i) {
+		for (var j = 0; j < selected_countries[i].Data.length; ++j) {
+			var new_obj = {Name:null, year:null, data:null};
+			new_obj.Name = selected_countries[i].Name;
+			new_obj.year = selected_countries[i].Data[j].year;
+			new_obj.data = selected_countries[i].Data[j].data;
+			flatData.push(new_obj)
+		}
+	}
+	return flatData;
+}
+
+function update_heatmap(selected_countries, scales) {
+	var color = scale_color();
+	var flatData = heatmap_process(selected_countries);
+
+	d3.select("#heatmap")
+		.selectAll('rect')
+		.data(flatData).join(
+			enter => enter.append('rect')
+			.transition().duration(1000)
+			.attrs({
+				"x": d => scales.xScale(d.year),
+				"y": d => scales.yScale(d.Name),
+				"rx": 3,
+				"ry": 3,
+				"width": scales.xScale.bandwidth(),
+				"height": scales.yScale.bandwidth(),
+				"fill": d => color.fill(d.data),
+				"stroke": "black",
+				"stroke-width": 1,
+				"stroke-opacity": 0.5,
+				"fill-opacity": 0.7
+			}),
+			update => update
+				.transition().duration(1000)
+				.attrs({
+				"x": d => scales.xScale(d.year),
+				"y": d => scales.yScale(d.Name),
+				"width": scales.xScale.bandwidth(),
+				"height": scales.yScale.bandwidth(),
+				"fill": d => color.fill(d.data)
+			}),
+			exit => exit.attrs({
+				"stroke-opacity": 0.5,
+				"fill-opacity": 0.7
+			})
+			.transition().duration(1000)
+			.attrs({
+				"stroke-opacity": 0,
+				"fill-opacity": 0
+			})
+			.remove()
+		)
+		.on("mouseover", (_, d) => mouseover_heatmap(d))
+		.on("mouseout", (_, d) => mouseout(d))
+}
+
+function add_heatmap_axis(scales) {
+	d3.select('#axes')
+		.append('g')
+		.style('font-size', 15)
+		.attr('transform', 'translate(0,' + (height-20) + ')')
+		.attr('id', 'x_axis')
+		.call(d3.axisBottom(scales.xScale).tickSize(0))
+		.select('.domain')
+		.remove()
+
+	d3.select('#axes')
+		.append('g')
+		.style('font-size', 15)
+		.attr('transform', 'translate('+ 150 + ',0)')
+		.attr('id', 'y_axis')
+		.call(d3.axisLeft(scales.yScale).tickSize(0))
+		.select('.domain')
+		.remove()
+}
+
+function update_heatmap_axis(scales) {
+	d3.select('#x_axis')
+		//.transition().duration(100)
+		.call(d3.axisBottom(scales.xScale).tickSize(0))
+		.select('.domain')
+		.remove();
+	d3.select('#y_axis')
+		//.transition().duration(100)
+		.call(d3.axisLeft(scales.yScale).tickSize(0))
+		.select('.domain')
+		.remove()
+}
+
 function update_line_on_click(data) {
 	var selected_countries = line_select_country(data);
 	scales = make_scales(selected_countries);
 	update_line(selected_countries, scales);
 	update_axes(scales);
-}
-
-function update_horizon_on_click(data) {
-	var selected_countries = line_select_country(data);
-	console.log(selected_countries)
-	var color = find_horizon_color();
-	update_horizon_plot(selected_countries, color);
-
-}
-
-function horizon_extract_data(all){
-	var length = all.length;
-	var ret = [];
-	for (var i = 0; i < length; ++i) {
-		ret.push(all[i].data);
-	}
-	console.log(ret)
-	return ret;
-}
-
-function update_horizon_plot(selected_countries, color) {
-	var numPlot = Number(selected_countries.length)
-
-	d3.select('.plot').selectAll('.horizon')
-		.data(selected_countries).enter()
-		.append('div')
-		.attr('class', 'horizon')
-		.each(function(d) {
-			d3.horizonChart()
-				.height(height/numPlot)
-				.title(d.Name)
-				.colors(color)
-				.call(this, horizon_extract_data(d.Data))
-		})
 }
 
 function update_line(selected_countries, scales){
@@ -526,6 +601,7 @@ function map_init(data) {
         "stroke-width": 1,
 				"stroke": "black",
 				"stroke-opacity": 0.3,
+				"fill-opacity": 0.7,
 				name: d => d.properties.adm0_a3
 			})
 		.on("mouseover", (_, d) => mouseover_map(d))
@@ -556,24 +632,27 @@ function mouseover_line(d) {
 		.selectAll("path")
 		.transition().duration(200)
 		.attrs({
-			"stroke-width": e => e.properties.region_un === d.Name ? 3:1,
-			"stroke-opacity":  e => e.properties.region_un === d.Name ? 1:0.3
+			"stroke-width": e => e.properties.region_un === d.Name ? 2:1,
+			"stroke-opacity":  e => e.properties.region_un === d.Name ? 1:0.3,
+			"fill-opacity": e => e.properties.region_un === d.Name ? 1:0.7
 		});
 	} else if (subregion === "All") {
 		d3.select("#map")
 		.selectAll("path")
 		.transition().duration(200)
 		.attrs({
-			"stroke-width": e => e.properties.subregion === d.Name ? 3:1,
-			"stroke-opacity":  e => e.properties.subregion === d.Name ? 1:0.3
+			"stroke-width": e => e.properties.subregion === d.Name ? 2:1,
+			"stroke-opacity":  e => e.properties.subregion === d.Name ? 1:0.3,
+			"fill-opacity": e => e.properties.subregion === d.Name ? 1:0.7
 		});
 	} else {
 		d3.select("#map")
 		.selectAll("path")
 		.transition().duration(200)
 		.attrs({
-			"stroke-width": e => e.properties.statistics[0].Country === d.Name ? 3:1,
-			"stroke-opacity":  e => e.properties.statistics[0].Country === d.Name ? 1:0.3
+			"stroke-width": e => e.properties.statistics[0].Country === d.Name ? 2:1,
+			"stroke-opacity":  e => e.properties.statistics[0].Country === d.Name ? 1:0.3,
+			"fill-opacity": e => e.properties.statistics[0].Country === d.Name ? 1:0.7
 		});
 	}
 
@@ -606,8 +685,9 @@ function mouseover_map(d) {
 	.selectAll("path")
 	.transition().duration(200)
 	.attrs({
-		"stroke-width": e => e.properties.statistics[0].Country === d.properties.statistics[0].Country ? 3:1,
-		"stroke-opacity":  e => e.properties.statistics[0].Country === d.properties.statistics[0].Country ? 1:0.3
+		"stroke-width": e => e.properties.statistics[0].Country === d.properties.statistics[0].Country ? 2:1,
+		"stroke-opacity":  e => e.properties.statistics[0].Country === d.properties.statistics[0].Country ? 1:0.3,
+		"fill-opacity": e => e.properties.statistics[0].Country === d.properties.statistics[0].Country ? 1:0.7
 	});
 
 	d3.select("#name")
@@ -640,6 +720,15 @@ function mouseover_map(d) {
 				"font-weight": e => e === d.properties.region_un ? 900:100
 			})
 
+		d3.select("#heatmap")
+			.selectAll("rect")
+			.transition().duration(200)
+			.attrs({
+				"stroke-width": e => e.Name == d.properties.region_un ? 2:1,
+				"stroke-opacity": e => e.Name == d.properties.region_un ? 1:0.5,
+				"fill-opacity": e => e.Name == d.properties.region_un ? 1:0.7
+			})
+
 	} else if (subregion === "All") {
 
 		d3.select("#series")
@@ -666,6 +755,15 @@ function mouseover_map(d) {
 				"font-weight": e => e === d.properties.subregion ? 900:100
 			})
 
+		d3.select("#heatmap")
+			.selectAll("rect")
+			.transition().duration(200)
+			.attrs({
+				"stroke-width": e => e.Name == d.properties.subregion ? 2:1,
+				"stroke-opacity": e => e.Name == d.properties.subregion ? 1:0.5,
+				"fill-opacity": e => e.Name == d.properties.subregion ? 1:0.7
+			})
+
 	} else {
 		d3.select("#series")
 		.selectAll("path")
@@ -690,7 +788,63 @@ function mouseover_map(d) {
 				"fill": e => e === d.properties.statistics[0].Country ? "red":"black",
 				"font-weight": e => e === d.properties.statistics[0].Country ? 900:100
 			})
+
+		d3.select("#heatmap")
+			.selectAll("rect")
+			.transition().duration(200)
+			.attrs({
+				"stroke-width": e => e.Name == d.properties.statistics[0].Country ? 2:1,
+				"stroke-opacity": e => e.Name == d.properties.statistics[0].Country ? 1:0.5,
+				"fill-opacity": e => e.Name == d.properties.statistics[0].Country ? 1:0.7
+			})
 	}
+}
+
+function mouseover_heatmap(d) {
+	var region_un = d3.select('#select_cont').property('value');
+	var subregion = d3.select('#select_sub_cont').property('value')
+
+	d3.select("#heatmap")
+		.selectAll("rect")
+		.transition().duration(200)
+		.attrs({
+			"stroke-width": e => e.Name == d.Name ? 3:1,
+			"stroke-opacity": e => e.Name == d.Name ? 1:0.5,
+			"fill-opacity": e => e.Name == d.Name ? 1:0.7
+		})
+
+	if (region_un === "All") {
+		d3.select("#map")
+		.selectAll("path")
+		.transition().duration(200)
+		.attrs({
+			"stroke-width": e => e.properties.region_un === d.Name ? 2:1,
+			"stroke-opacity":  e => e.properties.region_un === d.Name ? 1:0.3,
+			"fill-opacity": e => e.properties.region_un === d.Name ? 1:0.7
+		});
+	} else if (subregion === "All") {
+		d3.select("#map")
+		.selectAll("path")
+		.transition().duration(200)
+		.attrs({
+			"stroke-width": e => e.properties.subregion === d.Name ? 2:1,
+			"stroke-opacity":  e => e.properties.subregion === d.Name ? 1:0.3,
+			"fill-opacity": e => e.properties.subregion === d.Name ? 1:0.7
+		});
+	} else {
+		d3.select("#map")
+		.selectAll("path")
+		.transition().duration(200)
+		.attrs({
+			"stroke-width": e => e.properties.statistics[0].Country === d.Name ? 2:1,
+			"stroke-opacity":  e => e.properties.statistics[0].Country === d.Name ? 1:0.3,
+			"fill-opacity": e => e.properties.statistics[0].Country === d.Name ? 1:0.7
+		});
+	}
+
+	d3.select("#name")
+		.select("text")
+		.text(d.Name)
 }
 
 function mouseout(d) {
@@ -701,13 +855,24 @@ function mouseout(d) {
 			"stroke-width": 5
 		})
 
+	d3.select("#heatmap")
+		.selectAll("rect")
+		.transition().duration(200)
+		.attrs({
+			"stroke-width": 1,
+			"stroke-opacity": 0.5,
+			"fill-opacity": 0.7
+		})
+
+
 	d3.select("#map")
 		.selectAll("path")
 		.transition().duration(200)
 		.attrs({
 			"stroke-width": 1,
 			"stroke": "black",
-			"stroke-opacity": 0.3
+			"stroke-opacity": 0.3,
+			"fill-opacity": 0.7
 		})
 
 	d3.select("#name")
@@ -749,7 +914,7 @@ function button_year(data) {
 					if (plot === "Line plot") {
 						update_line_on_click(data);
 					} else {
-						update_horizon_on_click(data);
+						update_heatmap_on_click(data);
 					}
 
 				}
@@ -765,7 +930,7 @@ function button_year(data) {
 					if (plot === "Line plot") {
 						update_line_on_click(data);
 					} else {
-						update_horizon_on_click(data);
+						update_heatmap_on_click(data);
 					}
 				}
 			});
@@ -788,7 +953,7 @@ function button_variable(data) {
 				if (plot === "Line plot") {
 					update_line_on_click(data);
 				} else {
-					update_horizon_on_click(data);
+					update_heatmap_on_click(data);
 				}
 			});
 	var options = select.selectAll('option')
@@ -803,12 +968,29 @@ function button_variable(data) {
 }
 
 function button_plot(data) {
-	var choice = ["Line plot", "Horizon plot"];
+	var choice = ["Line plot", "Heatmap"];
 	var select = d3.select("#select_plot")
 			.on('change', function(event, d){
 				const plot = d3.select(this).property("value");
+				var selected_countries = line_select_country(data);
 				if (plot === "Line plot") {
-					var selected_countries = line_select_country(data);
+					d3.select(".plot").select("#axes")
+						.selectAll("*")
+						.remove()
+
+					d3.select(".plot").select("#heatmap")
+						.selectAll("rect")
+						.attrs({
+							"stroke-opacity": 0.5,
+							"fill-opacity": 0.7
+						})
+						.transition().duration(500)
+						.attrs({
+							"stroke-opacity": 0,
+							"fill-opacity": 0
+						})
+						.remove()
+
 					scales = make_scales(selected_countries);
 					add_axes(scales)
 					update_line_on_click(data);
@@ -824,15 +1006,14 @@ function button_plot(data) {
 						.attr("opacity", 0).remove()
 					d3.select(".plot").select("#axes")
 						.selectAll("*")
-						.attr("opacity", 1)
-						.transition().duration(500)
-						.attr("opacity", 0).remove()
+						.remove()
 					d3.select(".plot").selectAll("#legend")
 						.attr("opacity", 1)
 						.transition().duration(500)
 						.attr("opacity", 0).remove()
-
-					update_horizon_on_click(data);
+					scales = scale_heatmap(selected_countries);
+					add_heatmap_axis(scales)
+					update_heatmap_on_click(data);
 				}
 			});
 
@@ -857,7 +1038,7 @@ function button_continent(data) {
 				if (plot === "Line plot") {
 					update_line_on_click(data);
 				} else {
-					update_horizon_on_click(data);
+					update_heatmap_on_click(data);
 				}
 			});
 	var options = select.selectAll('option')
@@ -928,7 +1109,7 @@ function button_sub_continent(select, data) {
 				if (plot === "Line plot") {
 					update_line_on_click(data);
 				} else {
-					update_horizon_on_click(data);
+					update_heatmap_on_click(data);
 				}
 			});
 
